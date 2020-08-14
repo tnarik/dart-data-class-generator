@@ -474,15 +474,20 @@ class Imports {
                     this.endAtLine = i + 1;
                     break;
                 }
-            } else if (isLast || (!isBlank(line) && !line.startsWith('library') && !line.startsWith('//'))) {
-                if (this.startAtLine != null) {
-                    if (i > 0 && isBlank(lines[i - 1])) {
-                        this.endAtLine = i - 1;
-                    } else {
-                        this.endAtLine = i;
+            } else {
+                const isLicenseComment = line.startsWith('//') && this.values.length == 0;
+                const didEnd = !(isBlank(line) || line.startsWith('library') || isLicenseComment);
+                
+                if (isLast || didEnd) {
+                    if (this.startAtLine != null) {
+                        if (i > 0 && isBlank(lines[i - 1])) {
+                            this.endAtLine = i - 1;
+                        } else {
+                            this.endAtLine = i;
+                        }
                     }
+                    break;
                 }
-                break;
             }
         }
     }
