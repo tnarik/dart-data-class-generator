@@ -761,7 +761,7 @@ class DataClassGenerator {
                 if (readSetting('toString.enabled') && this.isPartSelected('toString'))
                     this.insertToString(clazz);
 
-                if ((clazz.usesEquatable || readSetting('useEquatable')) && this.isPartSelected('useEquatable')) {
+                if ((clazz.usesEquatable ||readSetting('useEquatable')) && this.isPartSelected('useEquatable')) {
                     this.insertEquatable(clazz);
                 } else {
                     if (readSetting('equality.enabled') && this.isPartSelected('equality'))
@@ -1181,12 +1181,6 @@ class DataClassGenerator {
 	 */
     insertToString(clazz) {
         if (clazz.usesEquatable || readSetting('useEquatable')) {
-            if (clazz.superclass != 'Equatable' && !clazz.mixins.includes('EquatableMixin')) {
-                this.insertEquatable(clazz);
-            } else {
-                this.addEquatableDetails(clazz);
-            }
-
             let stringify = '@override\n';
             stringify += 'bool get stringify => true;'
 
