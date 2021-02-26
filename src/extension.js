@@ -1239,18 +1239,18 @@ class DataClassGenerator {
         }
 
         let method = '@override\n';
-        method += 'bool operator ==(Object o) {\n';
-        method += '  if (identical(this, o)) return true;\n';
+        method += 'bool operator ==(Object other) {\n';
+        method += '  if (identical(this, other)) return true;\n';
         if (hasCollection && !isFlutter)
             method += `  final ${collectionEqualityFn} = const DeepCollectionEquality().equals;\n`
         method += '\n';
-        method += '  return o is ' + clazz.type + ' &&\n';
+        method += '  return other is ' + clazz.type + ' &&\n';
         for (let prop of props) {
             if (prop.isCollection) {
                 if (isFlutter) collectionEqualityFn = prop.isSet ? 'setEquals' : prop.isMap ? 'mapEquals' : 'listEquals';
-                method += `    ${collectionEqualityFn}(o.${prop.name}, ${prop.name})`;
+                method += `    ${collectionEqualityFn}(other.${prop.name}, ${prop.name})`;
             } else {
-                method += `    o.${prop.name} == ${prop.name}`;
+                method += `    other.${prop.name} == ${prop.name}`;
             }
             if (prop.name != props[props.length - 1].name) method += ' &&\n';
             else method += ';\n';
