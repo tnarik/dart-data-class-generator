@@ -1854,7 +1854,7 @@ class JsonReader {
 	 * @param {boolean} seperate
 	 */
     async commitJson(progress, seperate) {
-        let path = getCurrentPath();
+        let sourcePath = getCurrentPath();
         let fileContent = '';
 
         const length = this.files.length;
@@ -1878,7 +1878,7 @@ class JsonReader {
 
                 const replacement = imports + clazz.generateClassReplacement();
                 if (i > 0) {
-                    await writeFile(replacement, file.name, false, path);
+                    await writeFile(replacement, file.name, false, sourcePath);
                 } else {
                     await getEditor().edit(editor => {
                         editorReplace(editor, 0, null, replacement);
@@ -2260,29 +2260,20 @@ function createFileName(name) {
 }
 
 function getCurrentPath() {
-    let path = vscode.window.activeTextEditor.document.fileName;
-    let dirs = path.split("\\");
-    path = '';
-    for (let i = 0; i < dirs.length; i++) {
-        let dir = dirs[i];
-        if (i < dirs.length - 1) {
-            path += dir + "\\";
-        }
-    }
-
-    return path;
+    let currentPath = vscode.window.activeTextEditor.document.fileName;
+    return path.dirname(currentPath) + path.sep;
 }
 
 /**
  * @param {string} content
  * @param {string} name
  */
-async function writeFile(content, name, open = true, path = getCurrentPath()) {
-    let p = path + name + '.dart';
+async function writeFile(content, name, open = true, destinationPath = getCurrentPath()) {
+    let p = destinationPath + name + '.dart';
     if (fs.existsSync(p)) {
         let i = 0;
         do {
-            p = path + name + '_' + ++i + '.dart'
+            p = destinationPath + name + '_' + ++i + '.dart'
         } while (fs.existsSync(p));
     }
 
