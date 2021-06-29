@@ -63,7 +63,7 @@ You can also use the setting `dart_data_class_generator.useEquatable`, if you al
 - Hit **CTRL + P** to open the command dialog.
 - Search for **Dart Data Class Generator: Generate from JSON** and hit enter.
 - Type in a class name in the input dialog. This will be the name of the **top level class** if the JSON contains nested objects, all other class names will be infered from the JSON keys.
-- When there are nested objects in the JSON, a dialog will be appear if you want to seperate the classes into multiple files or if all classes should be in the same file.
+- When there are nested objects in the JSON, a dialog will be appear if you want to separate the classes into multiple files or if all classes should be in the same file.
 
 > **Note:**  
 > **This feature is still in beta!**  
@@ -95,7 +95,7 @@ You can customize the generator to only generate the functions you want in your 
 * `dart_data_class_generator.fromMap.default_values`: If true, checks if a field is null when deserializing and provides a non-null default value.
 * `dart_data_class_generator.constructor.default_values`: If true, generates default values for the constructor.
 * `dart_data_class_generator.constructor.required`: If true, generates @required annotation for every constructor parameter. Note: The generator wont generate default values for the constructor if enabled!
-* `dart_data_class_generator.json.seperate`: Whether to seperate a JSON into multiple files, when the JSON contains nested objects. ask: choose manually every time, seperate: always seperate into multiple files, current_file: always insert all classes into the current file.
+* `dart_data_class_generator.json.separate`: Whether to separate a JSON into multiple files, when the JSON contains nested objects. ask: choose manually every time, separate: always separate into multiple files, current_file: always insert all classes into the current file.
 * `dart_data_class_generator.override.manual`: If true, asks, when overriding a class (running the command on an existing class), for every single function/constructor that needs to be changed whether the generator should override the function or not. This allows you to preserve custom changes you made to the function/constructor that would be otherwise overwritten by the generator.
 * `dart_data_class_generator.constructor.enabled`: If true, generates a constructor for a data class.
 * `dart_data_class_generator.copyWith.enabled`: If true, generates a copyWith function for a data class.
