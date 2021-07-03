@@ -20,22 +20,12 @@ class DataClassCodeActions {
         this.clazz = new DartClass();
         this.generator = null;
         this.document = getDoc();
-        this.line = '';
-        this.range;
         this.isFlutter = isFlutter;
         this.projectName = projectName;
     }
 
     get uri() {
         return this.document.uri;
-    }
-
-    get lineNumber() {
-        return this.range.start.line + 1;
-    }
-
-    get charPos() {
-        return this.range.start.character;
     }
 
     /**
@@ -47,26 +37,24 @@ class DataClassCodeActions {
             return;
         }
 
-        this.range = range;
+        const lineNumber = range.start.line + 1;
+
         this.document = document;
-        this.line = document.lineAt(range.start).text;
         this.generator = new DataClassGenerator(document.getText(), null, false, null, this.isFlutter, this.projectName);
-        this.clazz = this.getClass();
+        this.clazz = this.getClass(lineNumber);
 
         // * Class independent code actions.
         const codeActions = [
-            this.createImportsFix(),
+            this.createImportsFix(lineNumber),
         ];
 
         if (this.clazz == null || !this.clazz.isValid) {
             return codeActions;
         }
 
-        const line = this.lineNumber;
-        const clazz = this.clazz;
-        const isAtClassDeclaration = line == clazz.startsAtLine;
-        const isInProperties = clazz.properties.find((p) => p.line == line) != undefined;
-        const isInConstrRange = line >= clazz.constrStartsAtLine && line <= clazz.constrEndsAtLine;
+        const isAtClassDeclaration = lineNumber == this.clazz.startsAtLine;
+        const isInProperties = this.clazz.properties.find((p) => p.line == lineNumber) != undefined;
+        const isInConstrRange = lineNumber >= this.clazz.constrStartsAtLine && lineNumber <= this.clazz.constrEndsAtLine;
         if (!(isAtClassDeclaration || isInProperties || isInConstrRange)) return codeActions;
 
         // * Class code actions.
@@ -90,7 +78,7 @@ class DataClassCodeActions {
             if (readSetting('toString.enabled'))
                 codeActions.push(this.createToStringFix());
 
-            if (clazz.usesEquatable || readSetting('useEquatable'))
+            if (this.clazz.usesEquatable || readSetting('useEquatable'))
                 codeActions.push(this.createUseEquatableFix());
             else {
                 if (readSettings(['equality.enabled', 'hashCode.enabled']))
@@ -177,11 +165,14 @@ class DataClassCodeActions {
         return this.constructQuickFix('useEquatable', `Generate Equatable`);
     }
 
-    createImportsFix() {
+    /**
+     * @param {number} lineNumber
+     */
+    createImportsFix(lineNumber) {
         const imports = new Imports(this.document.getText(), this.projectName);
         if (!imports.didChange) return;
 
-        const inImportsRange = this.lineNumber >= imports.startAtLine && this.lineNumber <= imports.endAtLine;
+        const inImportsRange = lineNumber >= imports.startAtLine && lineNumber <= imports.endAtLine;
         if (inImportsRange) {
             let title = 'Sort imports';
             if (imports.hasImportDeclaration && imports.hasExportDeclaration) {
@@ -196,9 +187,12 @@ class DataClassCodeActions {
         }
     }
 
-    getClass() {
+    /**
+     * @param {number} lineNumber
+     */
+    getClass(lineNumber) {
         for (let clazz of this.generator.clazzes) {
-            if (clazz.startsAtLine <= this.lineNumber && clazz.endsAtLine >= this.lineNumber) {
+            if (clazz.startsAtLine <= lineNumber && clazz.endsAtLine >= lineNumber) {
                 return clazz;
             }
         }

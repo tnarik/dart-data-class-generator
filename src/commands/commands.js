@@ -87,8 +87,7 @@ async function generateDataClass(isFlutter, projectName, text = getDocText()) {
 
         console.log(clazzes);
 
-        const edit = getReplaceEdit(clazzes, generator.imports, true);
-        await vscode.workspace.applyEdit(edit);
+        await vscode.workspace.applyEdit(getReplaceEdit(clazzes, generator.imports, true));
 
         clearSelection();
 
