@@ -4,8 +4,7 @@ const {
     DataClassCodeActions,
 } = require('./actions/actions');
 const {
-    isFlutterProject,
-    getProjectName,
+    characterizeProject,
 } = require('./helpers');
 
 const{
@@ -17,8 +16,7 @@ const{
  * @param {vscode.ExtensionContext} context
  */
 async function activate (context) {
-    const isFlutter = await isFlutterProject();
-    const projectName = await getProjectName();
+    const [isFlutter, projectName] = await characterizeProject();
 
     context.subscriptions.push(
         vscode.commands.registerCommand(

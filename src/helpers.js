@@ -258,37 +258,31 @@ function getCurrentPath() {
     return path.dirname(currentPath) + path.sep;
 }
 
-async function isFlutterProject() {
+/**
+ * Returns [boolean, string] indicating:
+ * - if the project is a Flutter project (default: false)
+ * - the project name (default: null)
+ */
+async function characterizeProject() {
+    let isFlutterProject = false;
     const pubspecs = await vscode.workspace.findFiles('pubspec.yaml');
     if (pubspecs != null && pubspecs.length > 0) {
         const pubspec = pubspecs[0];
         const content = fs.readFileSync(pubspec.fsPath, 'utf8');
         if (content != null && content.includes('name: ')) {
-            return content.includes('flutter:') && content.includes('sdk: flutter');
-        }
-    }
-    return false;
-}
-
-async function getProjectName() {
-    const pubspecs = await vscode.workspace.findFiles('pubspec.yaml');
-    if (pubspecs != null && pubspecs.length > 0) {
-        const pubspec = pubspecs[0];
-        const content = fs.readFileSync(pubspec.fsPath, 'utf8');
-        if (content != null && content.includes('name: ')) {
+            isFlutterProject = content.includes('flutter:') && content.includes('sdk: flutter');
             for (const line of content.split('\n')) {
                 if (line.startsWith('name: ')) {
-                    return line.replace('name:', '').trim();
+                    return [isFlutterProject, line.replace('name:', '').trim()];
                 }
             }
         }
     }
-    return null;
+    return [isFlutterProject, null];
 }
 
 module.exports = {
-    isFlutterProject,
-    getProjectName,
+    characterizeProject,
     writeFile,
     getCurrentPath,
     capitalize,
