@@ -66,24 +66,24 @@ async function generateJsonDataClass() {
         }
 
         let reader = new JsonReader(document, name);
-        let seperate = true;
+        let separate = true;
 
         if (await reader.error == null) {
             if (reader.files.length >= 2) {
-                const setting = readSetting('json.seperate');
+                const setting = readSetting('json.separate');
                 if (setting == 'ask') {
                     const r = await vscode.window.showQuickPick(['Yes', 'No'], {
                         canPickMany: false,
-                        placeHolder: 'Do you wish to seperate the JSON into multiple files?'
+                        placeHolder: 'Do you wish to separate the JSON into multiple files?'
                     });
 
                     if (r != null) {
-                        seperate = r == 'Yes';
+                        separate = r == 'Yes';
                     } else {
                         return;
                     }
                 } else {
-                    seperate = setting == 'seperate';
+                    separate = (setting == 'separate');
                 }
             }
 
@@ -93,7 +93,7 @@ async function generateJsonDataClass() {
             }, async function (progress, token) {
                 progress.report({ increment: 0, message: 'Generating Data Classes...' });
                 scrollTo(0);
-                await reader.commitJson(progress, seperate);
+                await reader.commitJson(progress, separate);
                 clearSelection();
             });
         } else {
@@ -413,8 +413,8 @@ class DartClass {
 
 class Imports {
     /**
-	 * @param {string} text
-	 */
+     * @param {string} text
+     */
     constructor(text) {
         /** @type {string[]} */
         this.values = [];
@@ -497,7 +497,7 @@ class Imports {
 
         let workspace = projectName;
         if (workspace == null || workspace.length == 0) {
-            const file = getEditor().document.uri;
+            const file = getDoc().uri;
             if (file.scheme === 'file') {
                 const folder = vscode.workspace.getWorkspaceFolder(file);
                 if (folder) {
@@ -568,9 +568,9 @@ class Imports {
     }
 
     /**
-	 * @param {string[]} imps
-	 */
-    hastAtLeastOneImport(imps) {
+     * @param {string[]} imps
+     */
+    hasAtLeastOneImport(imps) {
         for (let imp of imps) {
             const impt = `import '${imp}';`;
             if (this.text.includes(impt) || this.includes(impt))
@@ -586,20 +586,20 @@ class Imports {
     requiresImport(imp, validOverrides = []) {
         const formattedImport = !imp.startsWith('import') ? "import '" + imp + "';" : imp;
 
-        if (!this.includes(formattedImport) && !this.hastAtLeastOneImport(validOverrides)) {
+        if (!this.includes(formattedImport) && !this.hasAtLeastOneImport(validOverrides)) {
             this.values.push(formattedImport);
         }
     }
 }
 
 class ClassField {
-	/**
-	 * @param {String} type
-	 * @param {String} name
-	 * @param {number} line
-	 * @param {boolean} isFinal
-	 * @param {boolean} isConst
-	 */
+    /**
+     * @param {String} type
+     * @param {String} name
+     * @param {number} line
+     * @param {boolean} isFinal
+     * @param {boolean} isConst
+     */
     constructor(type, name, line = 1, isFinal = true, isConst = false) {
         this.rawType = type;
         this.jsonName = name;
@@ -921,9 +921,9 @@ class DataClassGenerator {
         return oldProperties;
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertConstructor(clazz) {
         const withDefaults = readSetting('constructor.default_values');
         let constr = '';
@@ -1033,9 +1033,9 @@ class DataClassGenerator {
         }
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertCopyWith(clazz) {
         let method = clazz.type + ' copyWith({\n';
         for (const prop of clazz.properties) {
@@ -1054,9 +1054,9 @@ class DataClassGenerator {
         this.appendOrReplace('copyWith', method, `${clazz.name} copyWith(`, clazz);
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertToMap(clazz) {
         let props = clazz.properties;
         /**
@@ -1104,9 +1104,9 @@ class DataClassGenerator {
         this.appendOrReplace('toMap', method, 'Map<String, dynamic> toMap()', clazz);
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertFromMap(clazz) {
         let withDefaultValues = readSetting('fromMap.default_values');
         let props = clazz.properties;
@@ -1164,9 +1164,9 @@ class DataClassGenerator {
         this.appendOrReplace('fromMap', method, `factory ${clazz.name}.fromMap(Map<String, dynamic> map)`, clazz);
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertToJson(clazz) {
         this.requiresImport('dart:convert');
 
@@ -1174,9 +1174,9 @@ class DataClassGenerator {
         this.appendOrReplace('toJson', method, 'String toJson()', clazz);
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertFromJson(clazz) {
         this.requiresImport('dart:convert');
 
@@ -1184,9 +1184,9 @@ class DataClassGenerator {
         this.appendOrReplace('fromJson', method, `factory ${clazz.name}.fromJson(String source)`, clazz);
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertToString(clazz) {
         if (clazz.usesEquatable || readSetting('useEquatable')) {
             let stringify = '@override\n';
@@ -1220,9 +1220,9 @@ class DataClassGenerator {
         }
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertEquality(clazz) {
         const props = clazz.properties;
         const hasCollection = props.find((p) => p.isCollection) != undefined;
@@ -1268,9 +1268,9 @@ class DataClassGenerator {
         this.appendOrReplace('equality', method, 'bool operator ==', clazz);
     }
 
-	/**
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {DartClass} clazz
+     */
     insertHash(clazz) {
         const useJenkins = readSetting('hashCode.use_jenkins');
         const short = !useJenkins && clazz.fewProps;
@@ -1329,8 +1329,8 @@ class DataClassGenerator {
     }
 
     /**
-	 * @param {DartClass} clazz
-	 */
+     * @param {DartClass} clazz
+     */
     insertEquatable(clazz) {
         this.addEquatableDetails(clazz);
 
@@ -1402,10 +1402,10 @@ class DataClassGenerator {
         }
     }
 
-	/**
-	 * @param {string} method
-	 * @param {DartClass} clazz
-	 */
+    /**
+     * @param {string} method
+     * @param {DartClass} clazz
+     */
     append(method, clazz, constr = false) {
         let met = indent(method);
         constr ? clazz.constr = met : clazz.toInsert += '\n' + met;
@@ -1431,7 +1431,7 @@ class DataClassGenerator {
             const line = lines[i];
             const linePos = i + 1;
             // Make sure to look for 'class ' with the space in order to allow
-            // fields that contain the word 'class' as in classifire.
+            // fields that contain the word 'class' as in classifier.
             // issue: https://github.com/BendixMa/Dart-Data-Class-Generator/issues/2
             const classLine = line.trimLeft().startsWith('class ') || line.trimLeft().startsWith('abstract class ');
 
@@ -1448,7 +1448,7 @@ class DataClassGenerator {
                 curlyBrackets = 0;
                 brackets = 0;
 
-                const words = this.splitWhileMaintaingGenerics(line);
+                const words = this.splitWhileMaintainingGenerics(line);
                 for (let word of words) {
                     word = word.trim();
                     if (word.length > 0) {
@@ -1621,7 +1621,7 @@ class DataClassGenerator {
      * 
      * @param {string} line
      */
-    splitWhileMaintaingGenerics(line) {
+    splitWhileMaintainingGenerics(line) {
         let words = [];
         let index = 0;
         let generics = 0;
@@ -1661,10 +1661,10 @@ class DataClassGenerator {
 }
 
 class DartFile {
-	/**
-	 * @param {DartClass} clazz
-	 * @param {string} content
-	 */
+    /**
+     * @param {DartClass} clazz
+     * @param {string} content
+     */
     constructor(clazz, content = null) {
         this.clazz = clazz;
         this.name = createFileName(clazz.name);
@@ -1673,10 +1673,10 @@ class DartFile {
 }
 
 class JsonReader {
-	/**
-	 * @param {string} source
-	 * @param {string} className
-	 */
+    /**
+     * @param {string} source
+     * @param {string} className
+     */
     constructor(source, className) {
         this.json = this.toPlainJson(source);
 
@@ -1702,16 +1702,16 @@ class JsonReader {
         return null;
     }
 
-	/**
-	 * @param {string} source
-	 */
+    /**
+     * @param {string} source
+     */
     toPlainJson(source) {
         return source.replace(new RegExp(' ', 'g'), '').replace(new RegExp('\n', 'g'), '');
     }
 
-	/**
-	 * @param {any} value
-	 */
+    /**
+     * @param {any} value
+     */
     getPrimitive(value) {
         let type = typeof (value);
         let sType = null;
@@ -1727,13 +1727,13 @@ class JsonReader {
         return sType;
     }
 
-	/**
-	 * Create DartClasses from a JSON mapping with class content and properties.
-	 * This is intended only for creating new files not overriding exisiting ones.
-	 * 
-	 * @param {any} object
-	 * @param {string} key
-	 */
+    /**
+     * Create DartClasses from a JSON mapping with class content and properties.
+     * This is intended only for creating new files not overriding exisiting ones.
+     * 
+     * @param {any} object
+     * @param {string} key
+     */
     getClazzes(object, key) {
         let clazz = new DartClass();
         clazz.startsAtLine = 1;
@@ -1793,9 +1793,9 @@ class JsonReader {
         clazz.classContent += '}';
     }
 
-	/**
-	 * @param {string} property
-	 */
+    /**
+     * @param {string} property
+     */
     getGeneratedTypeCount(property) {
         let p = new ClassField(property, 'x');
         let i = 0;
@@ -1841,9 +1841,9 @@ class JsonReader {
         this.clazzes = result;
     }
 
-	/**
-	 * @param {DataClassGenerator} generator
-	 */
+    /**
+     * @param {DataClassGenerator} generator
+     */
     addGeneratedFilesAsImport(generator) {
         const clazz = generator.clazzes[0];
         for (let prop of clazz.properties) {
@@ -1857,11 +1857,11 @@ class JsonReader {
         }
     }
 
-	/**
-	 * @param {vscode.Progress} progress
-	 * @param {boolean} seperate
-	 */
-    async commitJson(progress, seperate) {
+    /**
+     * @param {vscode.Progress} progress
+     * @param {boolean} separate
+     */
+    async commitJson(progress, separate) {
         let sourcePath = getCurrentPath();
         let fileContent = '';
 
@@ -1871,7 +1871,7 @@ class JsonReader {
             const isLast = i == length - 1;
             const generator = new DataClassGenerator(file.content, [file.clazz], true);
 
-            if (seperate)
+            if (separate)
                 this.addGeneratedFilesAsImport(generator)
 
             const imports = `${generator.imports.formatted}\n`;
@@ -1881,7 +1881,7 @@ class JsonReader {
                 message: `Creating file ${file.name}...`
             });
 
-            if (seperate) {
+            if (separate) {
                 const clazz = generator.clazzes[0];
 
                 const replacement = imports + clazz.generateClassReplacement();
@@ -1896,7 +1896,7 @@ class JsonReader {
                 // Slow the writing process intentionally down.
                 await new Promise(resolve => setTimeout(() => resolve(), 120));
             } else {
-                // Insert in current file when JSON should not be seperated.
+                // Insert in current file when JSON should not be separated.
                 for (let clazz of generator.clazzes) {
                     fileContent += clazz.generateClassReplacement() + '\n\n';
                 }
@@ -2119,7 +2119,7 @@ function getReplaceEdit(values, imports = null, showLogs = false) {
         if (clazz.isValid) {
             if (clazz.didChange) {
                 let replacement = clazz.generateClassReplacement();
-                // Seperate the classes with a new line when multiple
+                // Separate the classes with a new line when multiple
                 // classes are being generated.
                 if (!clazz.isLastInFile) {
                     replacement += '\n';
@@ -2145,10 +2145,10 @@ function getReplaceEdit(values, imports = null, showLogs = false) {
 
     // If imports need to be inserted, do it at the top of the file.
     if (imports != null && imports.hasImports) {
-        // Imports must be seperated by at least one line because otherwise we get an overlapping range error
+        // Imports must be separated by at least one line because otherwise we get an overlapping range error
         // from the vscode editor.
-        const areImportsSeperated = !hasMultiple || (imports.startAtLine || 0) < clazzes[0].startsAtLine - 1;
-        if (imports.hasPreviousImports && areImportsSeperated) {
+        const areImportsSeparated = !hasMultiple || (imports.startAtLine || 0) < clazzes[0].startsAtLine - 1;
+        if (imports.hasPreviousImports && areImportsSeparated) {
             edit.replace(uri, imports.range, imports.formatted);
         } else {
             edit.insert(uri, new vscode.Position(imports.startAtLine, 0), imports.formatted + '\n');
@@ -2218,9 +2218,9 @@ function toVarName(source) {
     let s = source;
     let r = '';
 
-	/**
-	 * @param {string} char
-	 */
+    /**
+     * @param {string} char
+     */
     let replace = (char) => {
         if (s.includes(char)) {
             const splits = s.split(char);
