@@ -48,24 +48,9 @@ async function activate (context) {
     }));
 }
 
-/**
-* @param {string} source
-* @param {string[]} matches
-*/
-function removeAll(source, matches) {
-    let r = '';
-    for (let s of source) {
-        if (!matches.includes(s)) {
-            r += s;
-        }
-    }
-    return r;
-}
-
 function deactivate() { }
 
 module.exports = {
     activate,
     deactivate,
-    removeAll,
 }
