@@ -254,6 +254,7 @@ class DartClass {
 class Imports {
     /**
      * @param {string} text
+     * @param {string} projectName
      */
     constructor(text, projectName) {
         /** @type {string[]} */
@@ -264,12 +265,11 @@ class Imports {
         this.endAtLine = null;
         /** @type {string} */
         this.rawImports = null;
-        this.text = text;
 
         /** @type {string} */
         this.projectName = projectName;
 
-        this.readImports();
+        this.readImports(text);
     }
 
     get hasImports() {
@@ -299,9 +299,14 @@ class Imports {
         );
     }
 
-    readImports() {
+    /**
+     * @param {string} text
+     */
+    readImports(text) {
+        if (!text) return;
+
         this.rawImports = '';
-        const lines = this.text.split('\n');
+        const lines = text.split('\n');
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             const isLast = i == lines.length - 1;
@@ -416,7 +421,7 @@ class Imports {
     hasAtLeastOneImport(imps) {
         for (let imp of imps) {
             const impt = `import '${imp}';`;
-            if (this.text.includes(impt) || this.includes(impt))
+            if (this.includes(impt))
                 return true;
         }
         return false;

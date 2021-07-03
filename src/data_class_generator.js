@@ -77,7 +77,7 @@ function count(source, match) {
 
 class DataClassGenerator {
     /**
-     * @param {String} text
+     * @param {string} text
      * @param {DartClass[]} clazzes
      * @param {boolean} fromJSON
      * @param {string} part
@@ -85,9 +85,8 @@ class DataClassGenerator {
      * @param {string} projectName
      */
     constructor(text, clazzes = null, fromJSON = false, part = null, isFlutter = false, projectName = null) {
-        this.text = text;
         this.fromJSON = fromJSON;
-        this.clazzes = clazzes == null ? this.parseAndReadClasses() : clazzes;
+        this.clazzes = clazzes == null ? this.parseAndReadClasses(text) : clazzes;
         this.isFlutter = isFlutter;
         this.projectName = projectName;
         this.imports = new Imports(text, projectName);
@@ -791,11 +790,16 @@ class DataClassGenerator {
         clazz.toReplace.push(part);
     }
 
-    parseAndReadClasses() {
+    /**
+     * @param {string} text
+     */
+    parseAndReadClasses(text=null) {
         let clazzes = [];
+        if (!text) return clazzes;
+
         let clazz = new DartClass();
 
-        let lines = this.text.split('\n');
+        let lines = text.split('\n');
         let curlyBrackets = 0;
         let brackets = 0;
 
