@@ -143,6 +143,42 @@ function removeEnd(source, end) {
  * @param {string} source
  */
  function toVarName(source) {
+    let reservedDartWords = [
+        "assert",
+        "break",
+        "case",
+        "catch",
+        "class",
+        "const",
+        "continue",
+        "default",
+        "do",
+        "else",
+        "enum",
+        "extends",
+        "false",
+        "final",
+        "finally",
+        "for",
+        "if",
+        "in",
+        "is",
+        "new",
+        "null",
+        "rethrow",
+        "return",
+        "super",
+        "switch",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "var",
+        "void",
+        "while",
+        "with"
+    ];
+
     let s = source;
     let r = '';
 
@@ -170,41 +206,7 @@ function removeEnd(source, end) {
         r = s;
 
     // Prevent dart keywords from being used.
-    switch (r) {
-        case 'assert': r = 'aAssert'; break;
-        case 'break': r = 'bBreak'; break;
-        case 'case': r = 'cCase'; break;
-        case 'catch': r = 'cCatch'; break;
-        case 'class': r = 'cClass'; break;
-        case 'const': r = 'cConst'; break;
-        case 'continue': r = 'cContinue'; break;
-        case 'default': r = 'dDefault'; break;
-        case 'do': r = 'dDo'; break;
-        case 'else': r = 'eElse'; break;
-        case 'enum': r = 'eEnum'; break;
-        case 'extends': r = 'eExtends'; break;
-        case 'false': r = 'fFalse'; break;
-        case 'final': r = 'fFinal'; break;
-        case 'finally': r = 'fFinally'; break;
-        case 'for': r = 'fFor'; break;
-        case 'if': r = 'iIf'; break;
-        case 'in': r = 'iIn'; break;
-        case 'is': r = 'iIs'; break;
-        case 'new': r = 'nNew'; break;
-        case 'null': r = 'nNull'; break;
-        case 'rethrow': r = 'rRethrow'; break;
-        case 'return': r = 'rReturn'; break;
-        case 'super': r = 'sSuper'; break;
-        case 'switch': r = 'sSwitch'; break;
-        case 'this': r = 'tThis'; break;
-        case 'throw': r = 'tThrow'; break;
-        case 'true': r = 'tTrue'; break;
-        case 'try': r = 'tTry'; break;
-        case 'var': r = 'vVar'; break;
-        case 'void': r = 'vVoid'; break;
-        case 'while': r = 'wWhile'; break;
-        case 'with': r = 'wWith'; break;
-    }
+    if (reservedDartWords.includes(r)) r = r[0]+capitalize(r);
 
     if (r.length > 0 && r[0].match(new RegExp(/[0-9]/)))
         r = 'n' + r;
