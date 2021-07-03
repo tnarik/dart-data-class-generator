@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.5.0
+
+Use `flutter/foundation.dart` instead of `collection/collection.dart` for equality if the project is a Flutter one.
+
+Use `require` instead of `@require`.
+
+
 ## 0.4.0
 
 Added support for enums
