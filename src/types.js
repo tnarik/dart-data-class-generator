@@ -252,7 +252,11 @@ class DartClass {
     }
 }
 
-class Imports {
+/**
+ * Holds raw preamble declarations, parses and formats
+ * It doesn't support intesrpersed comments (ignores preamble after them)
+ */
+ class Imports {
     /**
      * @param {string} text
      * @param {string} projectName
@@ -265,7 +269,7 @@ class Imports {
         /** @type {number} */
         this.endAtLine = null;
         /** @type {string} */
-        this.rawImports = null;
+        this.rawStatements = '';
 
         /** @type {string} */
         this.projectName = projectName;
@@ -289,8 +293,8 @@ class Imports {
         return this.startAtLine != null && this.endAtLine != null;
     }
 
-    get didChange() {
-        return !areStrictEqual(this.rawImports, this.formatted);
+    get shouldChange() {
+        return !areStrictEqual(this.rawStatements, this.formatted);
     }
 
     get range() {
@@ -306,7 +310,6 @@ class Imports {
     readImports(text) {
         if (!text) return;
 
-        this.rawImports = '';
         const lines = text.split('\n');
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -314,7 +317,7 @@ class Imports {
 
             if (line.startsWith('import') || line.startsWith('export') || line.startsWith('part')) {
                 this.values.push(line);
-                this.rawImports += `${line}\n`;
+                this.rawStatements += `${line}\n`;
                 if (this.startAtLine == null) {
                     this.startAtLine = i + 1;
                 }
@@ -324,10 +327,10 @@ class Imports {
                     break;
                 }
             } else {
-                const isLicenseComment = line.startsWith('//') && this.values.length == 0;
-                const didEnd = !(isBlank(line) || line.startsWith('library') || isLicenseComment);
+                const isInitialComment = line.startsWith('//') && this.values.length == 0;
+                const importsSectionEnded = !(isInitialComment || line.startsWith('library') || isBlank(line));
                 
-                if (isLast || didEnd) {
+                if (isLast || importsSectionEnded) {
                     if (this.startAtLine != null) {
                         if (i > 0 && isBlank(lines[i - 1])) {
                             this.endAtLine = i - 1;
@@ -362,32 +365,32 @@ class Imports {
         const partStatements = [];
         const exports = [];
 
-        for (let imp of this.values) {
-            if (imp.startsWith('export')) {
-                exports.push(imp);
-            } else if (imp.startsWith('part')) {
-                partStatements.push(imp);
-            } else if (imp.includes('dart:')) {
-                dartImports.push(imp);
-            } else if (workspace != null && imp.includes(`package:${workspace}`)) {
-                packageLocalImports.push(imp);
-            } else if (imp.includes('package:')) {
-                packageImports.push(imp);
+        for (let statement of this.values) {
+            if (statement.startsWith('export')) {
+                exports.push(statement);
+            } else if (statement.startsWith('part')) {
+                partStatements.push(statement);
+            } else if (statement.includes('dart:')) {
+                dartImports.push(statement);
+            } else if (workspace != null && statement.includes(`package:${workspace}`)) {
+                packageLocalImports.push(statement);
+            } else if (statement.includes('package:')) {
+                packageImports.push(statement);
             } else {
-                relativeImports.push(imp);
+                relativeImports.push(statement);
             }
         }
 
-        let imps = '';
-        function addImports(imports) {
-            imports.sort();
-            for (let i = 0; i < imports.length; i++) {
-                const isLast = i == imports.length - 1;
-                const imp = imports[i];
-                imps += imp + '\n';
+        let formattedStatements = '';
+        function addImports(statements) {
+            statements.sort();
+            for (let i = 0; i < statements.length; i++) {
+                const isLast = i == statements.length - 1;
+                const statement = statements[i];
+                formattedStatements += statement + '\n';
 
                 if (isLast) {
-                    imps += '\n';
+                    formattedStatements += '\n';
                 }
             }
         }
@@ -399,47 +402,47 @@ class Imports {
         addImports(exports);
         addImports(partStatements);
 
-        return removeEnd(imps, '\n');
+        return removeEnd(formattedStatements, '\n');
     }
 
     /**
-     * @param {string} imp
+     * @param {string} importStatement
      */
-    includes(imp) {
-        return this.values.includes(imp);
+    includes(importStatement) {
+        return this.values.includes(importStatement);
     }
 
     /**
-     * @param {string} imp
+     * @param {string} importStatement
      */
-    push(imp) {
-        return this.values.push(imp);
+    push(importStatement) {
+        return this.values.push(importStatement);
     }
 
     /**
-     * @param {string[]} imps
+     * @param {string[]} packageNames
      */
-    hasAtLeastOneImport(imps) {
-        for (let imp of imps) {
-            const impt = `import '${imp}';`;
-            if (this.includes(impt))
+    hasAtLeastOneImport(packageNames) {
+        for (let packageName of packageNames) {
+            const importStatement = `import '${packageName}';`;
+            if (this.includes(importStatement))
                 return true;
         }
         return false;
     }
 
     /**
-     * @param {string} imp
+     * @param {string} importStatementOrPackageName
      * @param {string[]} validOverrides
      */
-    requiresImport(imp, validOverrides = []) {
-        const formattedImport = !imp.startsWith('import') ? "import '" + imp + "';" : imp;
+    requiresImport(importStatementOrPackageName, validOverrides = []) {
+        const formattedImport = !importStatementOrPackageName.startsWith('import') ? "import '" + importStatementOrPackageName + "';" : importStatementOrPackageName;
 
         if (!this.includes(formattedImport) && !this.hasAtLeastOneImport(validOverrides)) {
             this.values.push(formattedImport);
         }
     }
-} 
+}
 
 class DartClassProperty {
     /**

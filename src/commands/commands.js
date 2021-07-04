@@ -53,8 +53,8 @@ const {
  */
 async function generateDataClass(isFlutter, projectName, text = getDocText()) {
     if (getLangId() == 'dart') {
-        const generator = new DataClassGenerator(text, null, false, null, isFlutter, projectName);
         const reader = new DartClassReader(text, null, projectName);
+        const generator = new DataClassGenerator(text, null, false, null, isFlutter, projectName);
         let theClasses = generator.clazzes;
 
         if (theClasses.length == 0) {

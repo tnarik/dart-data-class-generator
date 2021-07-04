@@ -8,7 +8,6 @@ const {
 } = require('../types');
 
 const {
-    getDoc,
     readSetting,
     readSettings,
 } = require('../helpers');
@@ -23,10 +22,12 @@ class DataClassCodeActions {
      */
     constructor(isFlutter, projectName) {
         this.clazz = new DartClass();
+        this.reader = null;
         this.generator = null;
-        this.document = getDoc();
+        this.document = null;
         this.isFlutter = isFlutter;
         this.projectName = projectName;
+        this.documentVersion = -1
     }
 
     get uri() {
@@ -42,16 +43,20 @@ class DataClassCodeActions {
             return;
         }
 
-        const lineNumber = range.start.line + 1;
+        if (!this.document || this.documentVersion != document.version) {
+            // Reparse only if there are changes
+            this.reader = new DartClassReader(document.getText(), null, this.projectName);
+            this.generator = new DataClassGenerator(document.getText(), null, false, null, this.isFlutter, this.projectName);
+            this.documentVersion = document.version
+        }
 
         this.document = document;
-        this.generator = new DataClassGenerator(document.getText(), null, false, null, this.isFlutter, this.projectName);
-        this.reader = new DartClassReader(document.getText(), null, this.projectName);
+        const lineNumber = range.start.line + 1;
         this.clazz = this.getClass(lineNumber);
 
         // * Class independent code actions.
         const codeActions = [
-            this.createImportsFix(lineNumber),
+            this.createImportsFix(lineNumber, this.reader.imports),
         ];
 
         if (this.clazz == null || !this.clazz.isValid) {
@@ -124,7 +129,6 @@ class DataClassCodeActions {
      */
     constructQuickFix(part, description) {
         const generator = new DataClassGenerator(this.document.getText(), null, false, part, this.isFlutter, this.projectName);
-        const reader = new DartClassReader(this.document.getText(), null, this.projectName);
         const fix = new vscode.CodeAction(description, vscode.CodeActionKind.QuickFix);
         const clazz = this.findQuickFixClazz(generator);
         if (clazz != null && clazz.didChange) {
@@ -174,10 +178,10 @@ class DataClassCodeActions {
 
     /**
      * @param {number} lineNumber
+     * @param {Imports} imports
      */
-    createImportsFix(lineNumber) {
-        const imports = new Imports(this.document.getText(), this.projectName);
-        if (!imports.didChange) return;
+    createImportsFix(lineNumber, imports) {
+        if (!imports.shouldChange) return;
 
         const inImportsRange = lineNumber >= imports.startAtLine && lineNumber <= imports.endAtLine;
         if (inImportsRange) {

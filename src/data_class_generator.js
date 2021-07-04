@@ -96,10 +96,6 @@ class DataClassGenerator {
         this.clazz = null;
     }
 
-    get hasImports() {
-        return this.imports.hasImports;
-    }
-
     /**
      * @param {string} imp
      * @param {string[]} validOverrides
