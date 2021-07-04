@@ -1,0 +1,318 @@
+const {
+    DartClass,
+    Imports,
+    DartClassProperty,
+} = require('../types');
+
+const {
+    removeEnd,
+} = require('../helpers');
+
+
+
+/**
+* @param {string} source
+* @param {string[]} matches
+*/
+function includesOne(source, matches, wordBased = true) {
+    const words = wordBased ? source.split(' ') : [source];
+    for (let word of words) {
+        for (let match of matches) {
+            if (wordBased) {
+                if (word === match)
+                    return true;
+            } else {
+                if (source.includes(match))
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+* @param {string} source
+* @param {string[]} matches
+*/
+function includesAll(source, matches) {
+    for (let match of matches) {
+        if (!source.includes(match))
+            return false;
+    }
+    return true;
+}
+
+/**
+* @param {string} source
+* @param {string} match
+*/
+function count(source, match) {
+    let count = 0;
+    let length = match.length;
+    for (let i = 0; i < source.length; i++) {
+        let part = source.substr((i * length) - 1, length);
+        if (part == match) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+/**
+ * The Reader looks at Dart code to generate a representation of the `class` being analyzed
+ * 
+ * As so, it doesn't care about project structure or parts. It is equivalent to the JSON reader, but from Dart code
+ */
+class DartClassReader {
+    /**
+     * @param {string} text
+     * @param {DartClass[]} theClasses
+     * @param {string} projectName
+     */
+    constructor(text, theClasses = null, projectName = null) {
+        this.theClasses = theClasses == null ? this.parseAndReadClasses(text) : theClasses;
+        this.imports = new Imports(text, projectName);
+    }
+
+    /**
+     * Reads a Dart class definition and maps it to a DartClass representation
+     * It relies on the consistent use of `dart format`
+     * 
+     * @param {string} text
+     */
+    parseAndReadClasses(text = null) {
+        let theClasses = [];
+        if (!text) return theClasses;
+
+        let aClazz = null;
+        let curlyBrackets = 0;
+        let brackets = 0;
+
+        let lines = text.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const lineNumber = i + 1;
+            // Make sure to look for 'class ' with the space in order to allow
+            // fields that contain the word 'class' as in classifier.
+            // issue: https://github.com/BendixMa/Dart-Data-Class-Generator/issues/2
+            const classDefinitionLine = line.trimLeft().startsWith('class ') || line.trimLeft().startsWith('abstract class ');
+
+            if (classDefinitionLine) {
+                aClazz = new DartClass();
+                aClazz.abstract = line.trimLeft().startsWith('abstract class ');
+                aClazz.startsAtLine = lineNumber;
+
+                let classNext = false;
+                let extendsNext = false;
+                let implementsNext = false;
+                let mixinsNext = false;
+
+                // Reset brackets count when a new class was detected.
+                curlyBrackets = 0;
+                brackets = 0;
+
+                const words = this.splitWhileMaintainingGenerics(line);
+                for (let word of words) {
+                    word = word.trim();
+                    if (word.length > 0) {
+                        if (word == 'class') {
+                            classNext = true;
+                        } else if (word == 'extends') {
+                            extendsNext = true;
+                        } else if (word == 'with') {
+                            mixinsNext = true;
+                            extendsNext = implementsNext = false;
+                        } else if (word == 'implements') {
+                            implementsNext = true;
+                            extendsNext = mixinsNext = false;
+                        } else if (classNext) {
+                            classNext = false;
+                            // Clean class name from generics
+                            if (word.includes('<')) {
+                                aClazz.fullGenericType = word.substring(
+                                    word.indexOf('<'),
+                                    word.lastIndexOf('>') + 1,
+                                );
+
+                                word = word.substring(0, word.indexOf('<'));
+                            }
+
+                            aClazz.name = word;
+                        } else if (extendsNext) {
+                            extendsNext = false;
+                            aClazz.superclass = word;
+                        } else if (mixinsNext) {
+                            const mixin = removeEnd(word, ',').trim();
+                            if (mixin.length > 0) aClazz.mixins.push(mixin);
+                        } else if (implementsNext) {
+                            const impl = removeEnd(word, ',').trim();
+                            if (impl.length > 0) aClazz.interfaces.push(impl);
+                        }
+                    }
+                }
+
+                // Do not add State<T> classes of widgets.
+                if (!aClazz.isState) {
+                    theClasses.push(aClazz);
+                }
+            }
+
+            if (aClazz) {
+                // Check if class ended based on curly bracket count. If all '{' have a '}' pair,
+                // class can be closed.
+                curlyBrackets += count(line, '{');
+                curlyBrackets -= count(line, '}');
+                // Count brackets, e.g. to find the constructor.
+                brackets += count(line, '(');
+                brackets -= count(line, ')');
+
+                // Detect beginning of constructor by looking for the class name and a bracket, while also
+                // making sure not to falsely detect a function constructor invocation with the actual 
+                // constructor with boilerplaty checking all possible constructor options.
+                const classConstructorLine = line.replace('const', '').trimLeft().startsWith(aClazz.name + '(');
+                if (!classDefinitionLine && classConstructorLine) {
+                    aClazz.constrStartsAtLine = lineNumber;
+                }
+
+                if (aClazz.constrStartsAtLine != null && aClazz.constrEndsAtLine == null) {
+                    aClazz.constr = aClazz.constr == null ? line + '\n' : aClazz.constr + line + '\n';
+
+                    // Detect end of constructor.
+                    if (brackets == 0) {
+                        aClazz.constrEndsAtLine = lineNumber;
+                        aClazz.constr = removeEnd(aClazz.constr, '\n');
+                    }
+                }
+
+                if (curlyBrackets === 0) {
+                    aClazz.endsAtLine = lineNumber;
+                    aClazz = null;
+                }
+
+
+                if (brackets == 0 && curlyBrackets == 1) {
+                    // Check if a line is valid to only include real properties.
+                    const lineValid =
+                        // Ignore comments.
+                        !line.trimLeft().startsWith('/') &&
+                        // Line shouldn't start with the class name as this would
+                        // be the constructor or an error.
+                        !line.trimLeft().startsWith(aClazz.name) &&
+                        // These symbols would indicate that this is not a field.
+                        !includesOne(line, ['{', '}', '=>', '@'], false) &&
+                        // Filter out some keywords.
+                        !includesOne(line, ['static', 'set', 'get', 'return', 'factory']) &&
+                        // Do not include final values that are assigned a value.
+                        !includesAll(line, ['final ', '=']) &&
+                        // Do not include non final fields that were declared after the constructor.
+                        (aClazz.constrStartsAtLine == null || line.includes('final ')) &&
+                        // Make sure not to catch abstract functions.
+                        !line.replace(/\s/g, '').endsWith(');');
+
+                    if (lineValid) {
+                        let propertyType = null;
+                        let propertyName = null;
+                        let isFinal = false;
+                        let isConst = false;
+
+                        const words = line.trim().split(' ');
+                        for (let i = 0; i < words.length; i++) {
+                            const word = words[i];
+                            const isLast = i == words.length - 1;
+
+                            if (word.length > 0 && word != '}' && word != '{') {
+                                if (word == 'final') {
+                                    isFinal = true;
+                                } else if (i == 0 && word == 'const') {
+                                    isConst = true;
+                                }
+
+                                // Be sure to not include keywords.
+                                if (word != 'final' && word != 'const') {
+                                    // If word ends with semicolon => variable name, else type.
+                                    let isVariable = word.endsWith(';') || (!isLast && (words[i + 1] == '='));
+                                    // Make sure we don't capture abstract functions like: String func();
+                                    isVariable = isVariable && !includesOne(word, ['(', ')']);
+                                    if (isVariable) {
+                                        if (propertyName == null)
+                                            propertyName = removeEnd(word, ';');
+                                    } else {
+                                        if (propertyType == null) propertyType = word;
+                                        // Types can include whitespace, e.g. Pair<A, B>,
+                                        // thus append word to propertyType if a propertyName hasn't
+                                        // been detected yet.
+                                        else if (propertyName == null) propertyType += ' ' + word;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (propertyType != null && propertyName != null) {
+                            const prop = new DartClassProperty(propertyType, propertyName, lineNumber, isFinal, isConst);
+
+                            if (i > 0) {
+                                // Check if it is an `enum` based on previous line comment
+                                // See https://github.com/bnxm/dart-data-class-generator/issues/19
+                                const prevLine = lines[i - 1];
+                                prop.isEnum = prevLine.match(/.*\/\/(\s*)enum/) != null;
+                            }
+
+                            aClazz.properties.push(prop);
+                        }
+                    }
+                }
+            }
+        }
+
+        return theClasses;
+    }
+
+    /**
+     * This function is for parsing the class name line while maintaining
+     * also more complex generic types like class A<A, List<C>>.
+     * 
+     * @param {string} line
+     */
+    splitWhileMaintainingGenerics(line) {
+        let words = [];
+        let index = 0;
+        let generics = 0;
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const isCurly = char == '{';
+            const isSpace = char == ' ';
+
+            if (char == '<') generics++;
+            if (char == '>') generics--;
+
+            if (generics == 0 && (isSpace || isCurly)) {
+                const word = line.substring(index, i).trim();
+
+                // Do not add whitespace.
+                if (word.length == 0) continue;
+                const isOnlyGeneric = word.startsWith('<');
+
+                // Append the generic type to the word when there is spacing
+                // between them. E.g.: class Hello <A, B>
+                if (isOnlyGeneric) {
+                    words[words.length - 1] += word;
+                } else {
+                    words.push(word);
+                }
+
+                if (isCurly) {
+                    break;
+                }
+
+                index = i;
+            }
+        }
+        return words;
+    }
+}
+
+module.exports = {
+    DartClassReader,
+}

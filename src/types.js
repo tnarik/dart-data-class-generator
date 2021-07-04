@@ -36,7 +36,7 @@ class DartClass {
         this.mixins = [];
         /** @type {string} */
         this.constr = null;
-        /** @type {ClassField[]} */
+        /** @type {DartClassProperty[]} */
         this.properties = [];
         /** @type {number} */
         this.startsAtLine = null;
@@ -53,6 +53,7 @@ class DartClass {
         /** @type {ClassPart[]} */
         this.toReplace = [];
         this.isLastInFile = false;
+        this.abstract = false;
     }
 
     get type() {
@@ -76,7 +77,7 @@ class DartClass {
 
     get propsEndAtLine() {
         if (this.properties.length > 0) {
-            return this.properties[this.properties.length - 1].line;
+            return this.properties[this.properties.length - 1].lineNumber;
         } else {
             return -1;
         }
@@ -143,7 +144,7 @@ class DartClass {
     }
 
     get isAbstract() {
-        return this.classContent.trimLeft().startsWith('abstract class');
+        return this.classContent ? this.classContent.trimLeft().startsWith('abstract class') : this.abstract;
     }
 
     get usesEquatable() {
@@ -440,19 +441,19 @@ class Imports {
     }
 } 
 
-class ClassField {
+class DartClassProperty {
     /**
      * @param {String} type
      * @param {String} name
-     * @param {number} line
+     * @param {number} lineNumber
      * @param {boolean} isFinal
      * @param {boolean} isConst
      */
-    constructor(type, name, line = 1, isFinal = true, isConst = false) {
+    constructor(type, name, lineNumber = 1, isFinal = true, isConst = false) {
         this.rawType = type;
         this.jsonName = name;
         this.name = toVarName(name);
-        this.line = line;
+        this.lineNumber = lineNumber;
         this.isFinal = isFinal;
         this.isConst = isConst;
         this.isEnum = false;
@@ -487,7 +488,7 @@ class ClassField {
         if (this.isList || this.isSet) {
             const collection = this.isSet ? 'Set' : 'List';
             const type = this.rawType == collection ? 'dynamic' : this.rawType.replace(collection + '<', '').replace('>', '');
-            return new ClassField(type, this.name, this.line, this.isFinal);
+            return new DartClassProperty(type, this.name, this.lineNumber, this.isFinal);
         }
 
         return this;
@@ -559,6 +560,6 @@ module.exports = {
     DartFile,
     DartClass,
     Imports,
-    ClassField,
+    DartClassProperty,
     ClassPart,
 }

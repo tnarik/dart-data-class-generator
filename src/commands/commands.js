@@ -1,14 +1,14 @@
 const vscode = require('vscode');
 
+const {DartClassReader} = require('../readers/dart_class_reader');
+const {JsonReader} = require('../readers/json_reader');
+
 const {DataClassGenerator} = require('../data_class_generator');
 
 const {
     DartClass,
 } = require('../types');
 
-const {
-    JsonReader,
-} = require('../json_reader');
 const {
     scrollTo,
     clearSelection,
@@ -24,22 +24,22 @@ const {
 } = require('../editor_helpers');
 
 /**
- * @param {DartClass[]} clazzez
+ * @param {DartClass[]} theClasses
  */
- async function showClassChooser(clazzez) {
-    const values = clazzez.map((v) => v.name);
+ async function showClassChooser(theClasses) {
+    const values = theClasses.map((theClass) => theClass.name);
 
-    const r = await vscode.window.showQuickPick(values, {
+    const response = await vscode.window.showQuickPick(values, {
         placeHolder: 'Please select the classes you want to generate data classes of.',
         canPickMany: true,
     });
 
     let result = [];
-    if (r != null && r.length > 0) {
-        for (let c of r) {
-            for (let clazz of clazzez) {
-                if (clazz.name == c)
-                    result.push(clazz);
+    if (response != null && response.length > 0) {
+        for (let selectedClass of response) {
+            for (let aClass of theClasses) {
+                if (aClass.name == selectedClass)
+                    result.push(aClass);
             }
         }
     } else return null;
@@ -47,29 +47,35 @@ const {
     return result;
 }
 
+/**
+ * @param {boolean} isFlutter
+ * @param {string} projectName
+ */
 async function generateDataClass(isFlutter, projectName, text = getDocText()) {
     if (getLangId() == 'dart') {
         const generator = new DataClassGenerator(text, null, false, null, isFlutter, projectName);
-        let clazzes = generator.clazzes;
+        const reader = new DartClassReader(text, null, projectName);
+        let theClasses = generator.clazzes;
 
-        if (clazzes.length == 0) {
+        if (theClasses.length == 0) {
             showError('No convertable dart classes were detected!');
             return null;
-        } else if (clazzes.length >= 2) {
+        } else if (theClasses.length >= 2) {
             // Show a prompt if there is more than one class in the current editor.
-            clazzes = await showClassChooser(clazzes);
-            if (clazzes == null) {
+            theClasses = await showClassChooser(theClasses);
+            if (theClasses == null) {
                 showInfo('No classes selected!');
                 return;
             }
         }
 
-        for (let clazz of clazzes) {
-            if (clazz.isValid && clazz.toReplace.length > 0) {
+        // FIXME: This looks into the replacement strings directly, because they were generated as a consequence of parsing
+        for (let aClass of theClasses) {
+            if (aClass.isValid && aClass.toReplace.length > 0) {
                 if (readSetting('override.manual')) {
                     // When manual overriding is activated ask for every override.
                     let result = [];
-                    for (let replacement of clazz.toReplace) {
+                    for (let replacement of aClass.toReplace) {
                         const r = await vscode.window.showQuickPick(['Yes', 'No'], {
                             placeHolder: `Do you want to override ${replacement.name}?`,
                             canPickMany: false
@@ -80,18 +86,16 @@ async function generateDataClass(isFlutter, projectName, text = getDocText()) {
                             return;
                         } else if ('Yes' == r) result.push(replacement);
                     }
-                    clazz.toReplace = result;
+                    aClass.toReplace = result;
                 }
             }
         }
 
-        console.log(clazzes);
-
-        await vscode.workspace.applyEdit(getReplaceEdit(clazzes, generator.imports, true));
-
+        await vscode.workspace.applyEdit(getReplaceEdit(theClasses, generator.imports, true));
         clearSelection();
 
-        return clazzes;
+        console.log(theClasses);
+        return theClasses;
     } else {
         showError('Make sure that you\'re editing a dart file and then try again!');
         return null;
@@ -99,7 +103,10 @@ async function generateDataClass(isFlutter, projectName, text = getDocText()) {
 }
 
 
-
+/**
+ * @param {boolean} isFlutter
+ * @param {string} projectName
+ */
 async function generateJsonDataClass(isFlutter, projectName) {
     let langId = getLangId();
     if (langId == 'dart') {

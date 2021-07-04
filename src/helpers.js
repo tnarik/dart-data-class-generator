@@ -262,6 +262,7 @@ function getCurrentPath() {
  * Returns [boolean, string] indicating:
  * - if the project is a Flutter project (default: false)
  * - the project name (default: null)
+ * @returns {Promise<[boolean, String]>}
  */
 async function characterizeProject() {
     let isFlutterProject = false;

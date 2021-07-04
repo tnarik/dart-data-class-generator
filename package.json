@@ -95,7 +95,7 @@
                     "default": false,
                     "description": "If true, asks, when overriding a class (running the command on an existing class), for every single function/constructor that needs to be changed whether the generator should override the function or not. This allows you to preserve custom changes you made to the function/constructor that would be otherwise overwritten by the generator."
                 },
-            "dart_data_class_generator.json.separate": {
+                "dart_data_class_generator.json.separate": {
                     "type": "string",
                     "enum": [
                         "ask",
@@ -103,7 +103,7 @@
                         "current_file"
                     ],
                     "default": "ask",
-                "description": "Whether to separate a JSON into multiple files, when the JSON contains nested objects. ask: choose manually every time, separate: always separate into multiple files, current_file: always insert all classes into the current file."
+                    "description": "Whether to separate a JSON into multiple files, when the JSON contains nested objects. ask: choose manually every time, separate: always separate into multiple files, current_file: always insert all classes into the current file."
                 },
                 "dart_data_class_generator.constructor.enabled": {
                     "type": "boolean",
@@ -220,5 +220,8 @@
         "mocha": "^6.1.4",
         "typescript": "^3.3.1",
         "vscode-test": "^1.0.2"
+    },
+    "dependencies": {
+        "change-case": "^4.1.2"
     }
 }

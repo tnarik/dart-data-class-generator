@@ -1,7 +1,7 @@
 const {
     DartClass,
     Imports,
-    ClassField,
+    DartClassProperty,
     ClassPart,
 } = require('./types');
 
@@ -75,6 +75,7 @@ function count(source, match) {
     return r.length > 0 ? r : source;
 }
 
+// FIXME: fromJSON is used only for the insertFromMap method.
 class DataClassGenerator {
     /**
      * @param {string} text
@@ -215,7 +216,7 @@ class DataClassGenerator {
      * If class already exists and has a constructor with the parameter, reuse that parameter.
      * E.g. when the dev changed the parameter from this.x to this.x = y the generator inserts
      * this.x = y. This way the generator can preserve changes made in the constructor.
-     * @param {ClassField | string} prop
+     * @param {DartClassProperty | string} prop
      * @param {{ "name": string; "text": string; "isThis": boolean; }[]} oldProps
      */
     findConstrParameter(prop, oldProps) {
@@ -431,7 +432,7 @@ class DataClassGenerator {
     insertToMap(clazz) {
         let props = clazz.properties;
         /**
-         * @param {ClassField} prop
+         * @param {DartClassProperty} prop
          */
         function customTypeMapping(prop, name = null, endFlag = ',\n') {
             prop = prop.isCollection ? prop.listType : prop;
@@ -484,7 +485,7 @@ class DataClassGenerator {
         const fromJSON = this.fromJSON;
 
         /**
-         * @param {ClassField} prop
+         * @param {DartClassProperty} prop
          */
         function customTypeMapping(prop, value = null) {
             prop = prop.isCollection ? prop.listType : prop;
@@ -805,7 +806,7 @@ class DataClassGenerator {
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            const linePos = i + 1;
+            const lineNumber = i + 1;
             // Make sure to look for 'class ' with the space in order to allow
             // fields that contain the word 'class' as in classifier.
             // issue: https://github.com/BendixMa/Dart-Data-Class-Generator/issues/2
@@ -813,7 +814,7 @@ class DataClassGenerator {
 
             if (classLine) {
                 clazz = new DartClass();
-                clazz.startsAtLine = linePos;
+                clazz.startsAtLine = lineNumber;
 
                 let classNext = false;
                 let extendsNext = false;
@@ -894,7 +895,7 @@ class DataClassGenerator {
                 // constructor with boilerplaty checking all possible constructor options.
                 const includesConstr = line.replace('const', '').trimLeft().startsWith(clazz.name + '(');
                 if (includesConstr && !classLine) {
-                    clazz.constrStartsAtLine = linePos;
+                    clazz.constrStartsAtLine = lineNumber;
                 }
 
                 if (clazz.constrStartsAtLine != null && clazz.constrEndsAtLine == null) {
@@ -902,7 +903,7 @@ class DataClassGenerator {
 
                     // Detect end of constructor.
                     if (brackets == 0) {
-                        clazz.constrEndsAtLine = linePos;
+                        clazz.constrEndsAtLine = lineNumber;
                         clazz.constr = removeEnd(clazz.constr, '\n');
                     }
                 }
@@ -912,7 +913,7 @@ class DataClassGenerator {
                 if (curlyBrackets != 0) {
                     clazz.classContent += '\n';
                 } else {
-                    clazz.endsAtLine = linePos;
+                    clazz.endsAtLine = lineNumber;
                     clazz = new DartClass();
                 }
 
@@ -974,7 +975,7 @@ class DataClassGenerator {
                         }
 
                         if (type != null && name != null) {
-                            const prop = new ClassField(type, name, linePos, isFinal, isConst);
+                            const prop = new DartClassProperty(type, name, lineNumber, isFinal, isConst);
 
                             if (i > 0) {
                                 const prevLine = lines[i - 1];

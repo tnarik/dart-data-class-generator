@@ -1,12 +1,12 @@
 const vscode = require('vscode');
 
-const {DataClassGenerator} = require('./data_class_generator');
+const {DataClassGenerator} = require('../data_class_generator');
 
 const {
     DartFile,
     DartClass,
-    ClassField,
-} = require('./types');
+    DartClassProperty,
+} = require('../types');
 
 const {
     getEditor,
@@ -16,12 +16,12 @@ const {
     createFileName,
     getCurrentPath,
     writeFile,
-} = require('./helpers');
+} = require('../helpers');
 
 const {
     editorReplace,
     editorInsert,
-} = require('./editor_helpers');
+} = require('../editor_helpers');
 
 class JsonReader {
     /**
@@ -138,7 +138,7 @@ class JsonReader {
                 }
             }
 
-            clazz.properties.push(new ClassField(type, k, ++i));
+            clazz.properties.push(new DartClassProperty(type, k, ++i));
             clazz.classContent += `  final ${type} ${toVarName(k)};\n`;
 
             // If object is JSONArray, break after first item.
@@ -152,7 +152,7 @@ class JsonReader {
      * @param {string} property
      */
     getGeneratedTypeCount(property) {
-        let p = new ClassField(property, 'x');
+        let p = new DartClassProperty(property, 'x');
         let i = 0;
         if (!p.isPrimitive) {
             for (let clazz of this.clazzes) {

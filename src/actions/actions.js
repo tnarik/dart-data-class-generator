@@ -1,4 +1,5 @@
 const vscode = require('vscode');
+const {DartClassReader} = require('../readers/dart_class_reader');
 const {DataClassGenerator} = require('../data_class_generator');
 
 const {
@@ -16,6 +17,10 @@ const {
 } = require('../editor_helpers');
 
 class DataClassCodeActions {
+    /**
+     * @param {boolean} isFlutter
+     * @param {string} projectName
+     */
     constructor(isFlutter, projectName) {
         this.clazz = new DartClass();
         this.generator = null;
@@ -41,6 +46,7 @@ class DataClassCodeActions {
 
         this.document = document;
         this.generator = new DataClassGenerator(document.getText(), null, false, null, this.isFlutter, this.projectName);
+        this.reader = new DartClassReader(document.getText(), null, this.projectName);
         this.clazz = this.getClass(lineNumber);
 
         // * Class independent code actions.
@@ -53,7 +59,7 @@ class DataClassCodeActions {
         }
 
         const isAtClassDeclaration = lineNumber == this.clazz.startsAtLine;
-        const isInProperties = this.clazz.properties.find((p) => p.line == lineNumber) != undefined;
+        const isInProperties = this.clazz.properties.find((p) => p.lineNumber == lineNumber) != undefined;
         const isInConstrRange = lineNumber >= this.clazz.constrStartsAtLine && lineNumber <= this.clazz.constrEndsAtLine;
         if (!(isAtClassDeclaration || isInProperties || isInConstrRange)) return codeActions;
 
@@ -118,6 +124,7 @@ class DataClassCodeActions {
      */
     constructQuickFix(part, description) {
         const generator = new DataClassGenerator(this.document.getText(), null, false, part, this.isFlutter, this.projectName);
+        const reader = new DartClassReader(this.document.getText(), null, this.projectName);
         const fix = new vscode.CodeAction(description, vscode.CodeActionKind.QuickFix);
         const clazz = this.findQuickFixClazz(generator);
         if (clazz != null && clazz.didChange) {
