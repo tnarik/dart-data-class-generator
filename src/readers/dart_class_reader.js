@@ -44,20 +44,13 @@ function includesAll(source, matches) {
 }
 
 /**
-* @param {string} source
-* @param {string} match
-*/
+ * Returns the number of times 'match' appears in 'source'
+ *
+ * @param {string} source
+ * @param {string} match
+ */
 function count(source, match) {
-    let count = 0;
-    let length = match.length;
-    for (let i = 0; i < source.length; i++) {
-        let part = source.substr((i * length) - 1, length);
-        if (part == match) {
-            count++;
-        }
-    }
-
-    return count;
+    return source.split(match).length - 1;
 }
 
 /**
