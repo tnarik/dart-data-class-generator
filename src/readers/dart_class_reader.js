@@ -79,7 +79,7 @@ class DartClassReader {
         let theClasses = [];
         if (!text) return theClasses;
 
-        let aClazz = null;
+        let aClass = null;
         let curlyBrackets = 0;
         let brackets = 0;
 
@@ -93,9 +93,9 @@ class DartClassReader {
             const classDefinitionLine = line.trimLeft().startsWith('class ') || line.trimLeft().startsWith('abstract class ');
 
             if (classDefinitionLine) {
-                aClazz = new DartClass();
-                aClazz.abstract = line.trimLeft().startsWith('abstract class ');
-                aClazz.startsAtLine = lineNumber;
+                aClass = new DartClass();
+                aClass.abstract = line.trimLeft().startsWith('abstract class ');
+                aClass.startsAtLine = lineNumber;
 
                 let classNext = false;
                 let extendsNext = false;
@@ -124,7 +124,7 @@ class DartClassReader {
                             classNext = false;
                             // Clean class name from generics
                             if (word.includes('<')) {
-                                aClazz.fullGenericType = word.substring(
+                                aClass.fullGenericType = word.substring(
                                     word.indexOf('<'),
                                     word.lastIndexOf('>') + 1,
                                 );
@@ -132,27 +132,27 @@ class DartClassReader {
                                 word = word.substring(0, word.indexOf('<'));
                             }
 
-                            aClazz.name = word;
+                            aClass.name = word;
                         } else if (extendsNext) {
                             extendsNext = false;
-                            aClazz.superclass = word;
+                            aClass.superclass = word;
                         } else if (mixinsNext) {
                             const mixin = removeEnd(word, ',').trim();
-                            if (mixin.length > 0) aClazz.mixins.push(mixin);
+                            if (mixin.length > 0) aClass.mixins.push(mixin);
                         } else if (implementsNext) {
                             const impl = removeEnd(word, ',').trim();
-                            if (impl.length > 0) aClazz.interfaces.push(impl);
+                            if (impl.length > 0) aClass.interfaces.push(impl);
                         }
                     }
                 }
 
                 // Do not add State<T> classes of widgets.
-                if (!aClazz.isState) {
-                    theClasses.push(aClazz);
+                if (!aClass.isState) {
+                    theClasses.push(aClass);
                 }
             }
 
-            if (aClazz) {
+            if (aClass) {
                 // Check if class ended based on curly bracket count. If all '{' have a '}' pair,
                 // class can be closed.
                 curlyBrackets += count(line, '{');
@@ -164,24 +164,24 @@ class DartClassReader {
                 // Detect beginning of constructor by looking for the class name and a bracket, while also
                 // making sure not to falsely detect a function constructor invocation with the actual 
                 // constructor with boilerplaty checking all possible constructor options.
-                const classConstructorLine = line.replace('const', '').trimLeft().startsWith(aClazz.name + '(');
+                const classConstructorLine = line.replace('const', '').trimLeft().startsWith(aClass.name + '(');
                 if (!classDefinitionLine && classConstructorLine) {
-                    aClazz.constrStartsAtLine = lineNumber;
+                    aClass.constrStartsAtLine = lineNumber;
                 }
 
-                if (aClazz.constrStartsAtLine != null && aClazz.constrEndsAtLine == null) {
-                    aClazz.constr = aClazz.constr == null ? line + '\n' : aClazz.constr + line + '\n';
+                if (aClass.constrStartsAtLine != null && aClass.constrEndsAtLine == null) {
+                    aClass.constr = aClass.constr == null ? line + '\n' : aClass.constr + line + '\n';
 
                     // Detect end of constructor.
                     if (brackets == 0) {
-                        aClazz.constrEndsAtLine = lineNumber;
-                        aClazz.constr = removeEnd(aClazz.constr, '\n');
+                        aClass.constrEndsAtLine = lineNumber;
+                        aClass.constr = removeEnd(aClass.constr, '\n');
                     }
                 }
 
                 if (curlyBrackets === 0) {
-                    aClazz.endsAtLine = lineNumber;
-                    aClazz = null;
+                    aClass.endsAtLine = lineNumber;
+                    aClass = null;
                 }
 
 
@@ -192,7 +192,7 @@ class DartClassReader {
                         !line.trimLeft().startsWith('/') &&
                         // Line shouldn't start with the class name as this would
                         // be the constructor or an error.
-                        !line.trimLeft().startsWith(aClazz.name) &&
+                        !line.trimLeft().startsWith(aClass.name) &&
                         // These symbols would indicate that this is not a field.
                         !includesOne(line, ['{', '}', '=>', '@'], false) &&
                         // Filter out some keywords.
@@ -200,7 +200,7 @@ class DartClassReader {
                         // Do not include final values that are assigned a value.
                         !includesAll(line, ['final ', '=']) &&
                         // Do not include non final fields that were declared after the constructor.
-                        (aClazz.constrStartsAtLine == null || line.includes('final ')) &&
+                        (aClass.constrStartsAtLine == null || line.includes('final ')) &&
                         // Make sure not to catch abstract functions.
                         !line.replace(/\s/g, '').endsWith(');');
 
@@ -252,7 +252,7 @@ class DartClassReader {
                                 prop.isEnum = prevLine.match(/.*\/\/(\s*)enum/) != null;
                             }
 
-                            aClazz.properties.push(prop);
+                            aClass.properties.push(prop);
                         }
                     }
                 }
