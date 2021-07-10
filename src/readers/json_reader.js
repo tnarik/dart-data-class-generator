@@ -91,7 +91,7 @@ class JsonReader {
      */
     getClazzes(object, key) {
         let clazz = new DartClass();
-        clazz.startsAtLine = 1;
+        clazz.startsAt = 1;
         clazz.name = capitalize(key);
 
         let isArray = false;
@@ -102,10 +102,11 @@ class JsonReader {
         } else {
             // Top level arrays are currently not supported!
             this.clazzes.push(clazz);
+            console.log(`got ${this.clazzes.length} classes from JSON`)
         }
 
         let i = 1;
-        clazz.classContent += 'class ' + clazz.name + ' {\n';
+        clazz.initialSourceCode += 'class ' + clazz.name + ' {\n';
         for (let key in object) {
             // named key for class names.
             let k = !isArray ? key : removeEnd(clazz.name.toLowerCase(), 's');
@@ -139,13 +140,13 @@ class JsonReader {
             }
 
             clazz.properties.push(new DartClassProperty(type, k, ++i));
-            clazz.classContent += `  final ${type} ${toVarName(k)};\n`;
+            clazz.initialSourceCode += `  final ${type} ${toVarName(k)};\n`;
 
             // If object is JSONArray, break after first item.
             if (isArray) break;
         }
-        clazz.endsAtLine = ++i;
-        clazz.classContent += '}';
+        clazz.endsAt = ++i;
+        clazz.initialSourceCode += '}';
     }
 
     /**
@@ -168,13 +169,15 @@ class JsonReader {
     async generateFiles() {
         try {
             const json = JSON.parse(this.json);
+            console.log('got json')
             this.getClazzes(json, this.clazzName);
+            console.log('generated classes')
             this.removeDuplicates();
 
             for (let clazz of this.clazzes) {
                 this.files.push(new DartFile(clazz));
             }
-
+            console.log(`got ${this.files.length} files generated`)
             return false;
         } catch (e) {
             console.log(e.msg);
@@ -182,18 +185,18 @@ class JsonReader {
         }
     }
 
-    // If multiple clazzes of the same class exist, remove the duplicates
+    // If multiple classes of the same class exist, remove the duplicates
     // before writing them.
     removeDuplicates() {
-        let result = [];
-        let clazzes = this.clazzes.map((item) => item.classContent);
-        clazzes.forEach((item, index) => {
-            if (clazzes.indexOf(item) == index) {
-                result.push(this.clazzes[index]);
+        let dedupClasses = [];
+        let clazzes = this.clazzes.map((aClass) => aClass.initialSourceCode);
+        clazzes.forEach((aClass, index) => {
+            if (clazzes.indexOf(aClass) == index) {
+                dedupClasses.push(this.clazzes[index]);
             }
         });
 
-        this.clazzes = result;
+        this.clazzes = dedupClasses;
     }
 
     /**
@@ -217,6 +220,7 @@ class JsonReader {
      * @param {boolean} separate
      */
     async commitJson(progress, separate) {
+        console.log('committing JSON to file')
         let sourcePath = getCurrentPath();
         let fileContent = '';
 
@@ -224,7 +228,7 @@ class JsonReader {
         for (let i = 0; i < length; i++) {
             const file = this.files[i];
             const isLast = i == length - 1;
-            const generator = new DataClassGenerator(file.content, [file.clazz], true, null, this.isFlutter, this.projectName);
+            const generator = new DataClassGenerator([file.clazz], null /* imports */, true, this.isFlutter, this.projectName);
 
             if (separate)
                 this.addGeneratedFilesAsImport(generator)
@@ -235,7 +239,7 @@ class JsonReader {
                 increment: ((1 / length) * 100),
                 message: `Creating file ${file.name}...`
             });
-
+            console.warn(`Creating file ${file.name}`)
             if (separate) {
                 const clazz = generator.clazzes[0];
 

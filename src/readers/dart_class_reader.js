@@ -1,5 +1,6 @@
 const {
     DartClass,
+    ClassPart,
     Imports,
     DartClassProperty,
 } = require('../types');
@@ -53,10 +54,27 @@ function count(source, match) {
     return source.split(match).length - 1;
 }
 
+const normalizeWithoutGenerics = (src) => {
+    let result = '';
+    let generics = 0;
+    let prevChar = '';
+    for (const char of src) {
+        if (char == '<') generics++;
+        if (char != ' ' && generics == 0) {
+            result += char;
+        }
+
+        if (char == '>' && prevChar != '=') generics--;
+        prevChar = char;
+    }
+
+    return result;
+}
+
 /**
  * The Reader looks at Dart code to generate a representation of the `class` being analyzed
  * 
- * As so, it doesn't care about project structure or parts. It is equivalent to the JSON reader, but from Dart code
+ * As such, it doesn't care about project structure or parts. It is equivalent to the JSON reader, but from Dart code
  */
 class DartClassReader {
     /**
@@ -65,7 +83,7 @@ class DartClassReader {
      * @param {string} projectName
      */
     constructor(text, theClasses = null, projectName = null) {
-        this.theClasses = theClasses == null ? this.parseAndReadClasses(text) : theClasses;
+        this.theClasses = theClasses == null ? this.parseClasses(text) : theClasses;
         this.imports = new Imports(text, projectName);
     }
 
@@ -75,11 +93,13 @@ class DartClassReader {
      * 
      * @param {string} text
      */
-    parseAndReadClasses(text = null) {
+    parseClasses(text = null) {
         let theClasses = [];
         if (!text) return theClasses;
 
         let aClass = null;
+        let aPart = null;
+        let aPartIsArrowSyntax = false;
         let curlyBrackets = 0;
         let brackets = 0;
 
@@ -95,7 +115,7 @@ class DartClassReader {
             if (classDefinitionLine) {
                 aClass = new DartClass();
                 aClass.abstract = line.trimLeft().startsWith('abstract class ');
-                aClass.startsAtLine = lineNumber;
+                aClass.startsAt = lineNumber;
 
                 let classNext = false;
                 let extendsNext = false;
@@ -161,26 +181,81 @@ class DartClassReader {
                 brackets += count(line, '(');
                 brackets -= count(line, ')');
 
+                // HACK: considering the constructor beginning here instead of at the common section 
                 // Detect beginning of constructor by looking for the class name and a bracket, while also
                 // making sure not to falsely detect a function constructor invocation with the actual 
                 // constructor with boilerplaty checking all possible constructor options.
                 const classConstructorLine = line.replace('const', '').trimLeft().startsWith(aClass.name + '(');
                 if (!classDefinitionLine && classConstructorLine) {
-                    aClass.constrStartsAtLine = lineNumber;
+                    aPart = new ClassPart('constructor', 'constructor');
+                    aPart.startsAt = lineNumber
+                    // aClass.constrStartsAtLine = lineNumber;
                 }
+                // if (aPart && aPart.name == 'constructor') {
+                //     console.log('old constr handling')
+                //     aClass.constr = aClass.constr == null ? line + '\n' : aClass.constr + line + '\n';
 
-                if (aClass.constrStartsAtLine != null && aClass.constrEndsAtLine == null) {
-                    aClass.constr = aClass.constr == null ? line + '\n' : aClass.constr + line + '\n';
+                //     // Detect end of constructor.
+                //     if (brackets == 0) {
+                //         aClass.constrEndsAtLine = lineNumber;
+                //         aClass.constr = removeEnd(aClass.constr, '\n');
+                //     }    
+                // }
 
-                    // Detect end of constructor.
-                    if (brackets == 0) {
-                        aClass.constrEndsAtLine = lineNumber;
-                        aClass.constr = removeEnd(aClass.constr, '\n');
+                // REMOVE: should go away as constructor is now a part (this means the same as above)
+                // if (aClass.constrStartsAtLine != null && aClass.constrEndsAtLine == null) {
+                //     aClass.constr = aClass.constr == null ? line + '\n' : aClass.constr + line + '\n';
+
+                // Detect end of constructor.
+                //     if (brackets == 0) {
+                //         aClass.constrEndsAtLine = lineNumber;
+                //         aClass.constr = removeEnd(aClass.constr, '\n');
+                //     }
+                // }
+
+                /**
+                 *  THIS STANDS FOR THE WHOLE `findPartInSourceCode` (or previous `findPart`) from the generator
+                 */
+                // this.appendOrReplace('constructor', 'constructor', `${clazz.name}${startBracket}`
+                // TODO: extract parts from source code:
+                let partIdentifiers = this.matchPart(aClass, line);
+                if (aPart == null && partIdentifiers[0] != null) {
+                    if (line.includes('=>'))
+                        aPartIsArrowSyntax = true;
+
+                    aPart = new ClassPart(partIdentifiers[0], partIdentifiers[1]);
+                    aPart.startsAt = lineNumber
+                }
+                if (aPart) {
+                    aPart.current += line + '\n'; // HACK: Might not be needed in the future
+
+                    if (!aPartIsArrowSyntax && curlyBrackets == 1) {
+                        aPart.endsAt = lineNumber
+                        aPart.current = removeEnd(aPart.current, '\n'); // ???: Not sure
+                        aClass.initialParts.push(aPart)
+                        aPart = null
+                    }
+                    if (aPartIsArrowSyntax && line.trimRight().endsWith(';')) {
+                        aPart.endsAt = lineNumber
+                        aPart.current = removeEnd(aPart.current, '\n'); // ???: Not sure
+                        aClass.initialParts.push(aPart)
+                        aPartIsArrowSyntax = false;
+                        aPart = null
                     }
                 }
 
+
+
+                // REMOVE: initialSourceCode is required to allow additions/insertions (preserves non-replaceable section)
+                // Considered a hack because initialSourceCode should only be there when reading from workspace, and there shouldn't be any need to store it.
+                // aClass.initialSourceCode += line + '\n';
+
+                // closing class?
                 if (curlyBrackets === 0) {
-                    aClass.endsAtLine = lineNumber;
+                    aClass.endsAt = lineNumber;
+                    if (aClass != null) {
+                        console.warn(`previously had class: ${aClass.name} with ${aClass.initialParts.length} parts detected`)
+                    }
                     aClass = null;
                 }
 
@@ -200,7 +275,7 @@ class DartClassReader {
                         // Do not include final values that are assigned a value.
                         !includesAll(line, ['final ', '=']) &&
                         // Do not include non final fields that were declared after the constructor.
-                        (aClass.constrStartsAtLine == null || line.includes('final ')) &&
+                        (!aClass.hasConstructor || line.includes('final ')) &&
                         // Make sure not to catch abstract functions.
                         !line.replace(/\s/g, '').endsWith(');');
 
@@ -262,6 +337,36 @@ class DartClassReader {
         return theClasses;
     }
 
+
+    // TODO: Identify part match on the reader
+    /**
+     * 
+     * @param {DartClass} clazz 
+     * @param {string} line 
+     * @returns [string, string]
+     */
+    matchPart(clazz, line) {
+        let finderStrings = new Map([
+            [`${clazz.name} copyWith(`, ['copyWith', 'copyWith']],
+            ['Map<String, dynamic> toMap()', ['toMap', 'serialization']],
+            [`factory ${clazz.name}.fromMap(Map<String, dynamic> map)`, ['fromMap', 'serialization']],
+            ['String toJson()', ['toJson', 'serialization']],
+            [`factory ${clazz.name}.fromJson(String source)`, ['fromJson', 'serialization']],
+            ['bool get stringify', ['stringify', 'toString']],
+            ['String toString()', ['toString', 'toString']],
+            ['bool operator ==', ['equality', 'equality']],
+            ['int get hashCode', ['hashCode', 'equality']],
+            ['List<Object> get props', ['props', 'useEquatable']],
+        ]);
+
+        for (const [finderString, identifiers] of finderStrings) {
+            if ( normalizeWithoutGenerics(line).startsWith(normalizeWithoutGenerics(finderString)) ) {
+                return identifiers;
+            }      
+        }
+        return [null, null]
+    }
+
     /**
      * This function is for parsing the class name line while maintaining
      * also more complex generic types like class A<A, List<C>>.
@@ -303,6 +408,49 @@ class DartClassReader {
             }
         }
         return words;
+    }
+
+    /**
+     * @param {string} name
+     * @param {string} groupName
+     * @param {string} finder
+     * @param {DartClass} clazz
+     */
+    REMOVEfindPartInSourceCode(name, groupName, finder, clazz) {
+        const finderString = normalizeWithoutGenerics(finder);
+        const lines = clazz.initialSourceCode.split('\n');
+        const part = new ClassPart(name, groupName);
+        let curlies = 0;
+        let singleLine = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const lineNum = clazz.startsAt + i;
+
+            curlies += count(line, '{');
+            curlies -= count(line, '}');
+
+            if (part.startsAt == null && normalizeWithoutGenerics(line).startsWith(finderString)) {
+                if (line.includes('=>')) singleLine = true;
+                if (curlies == 2 || singleLine) {
+                    part.startsAt = lineNum;
+                    part.current = line + '\n';
+                }
+            } else if (part.startsAt != null && part.endsAt == null && (curlies >= 2 || singleLine)) {
+                part.current += line + '\n';
+            } else if (part.startsAt != null && part.endsAt == null && curlies == 1) {
+                part.endsAt = lineNum;
+                part.current += line;
+            }
+
+            // Detect the end of a single line function by searching for the ';' because
+            // a single line function doesn't necessarily only have one single line.
+            if (singleLine && part.startsAt != null && part.endsAt == null && line.trimRight().endsWith(';')) {
+                part.endsAt = lineNum;
+            }
+        }
+
+        return part.isValid ? part : null;
     }
 }
 

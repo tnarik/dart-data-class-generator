@@ -21,7 +21,6 @@ class DataClassCodeActions {
      * @param {string} projectName
      */
     constructor(isFlutter, projectName) {
-        this.clazz = new DartClass();
         this.reader = null;
         this.generator = null;
         this.document = null;
@@ -46,54 +45,59 @@ class DataClassCodeActions {
         if (!this.document || this.documentVersion != document.version) {
             // Reparse only if there are changes
             this.reader = new DartClassReader(document.getText(), null, this.projectName);
-            this.generator = new DataClassGenerator(document.getText(), null, false, null, this.isFlutter, this.projectName);
+            this.generator = new DataClassGenerator(this.reader.theClasses, this.reader.imports, false, this.isFlutter, this.projectName);
             this.documentVersion = document.version
         }
 
         this.document = document;
         const lineNumber = range.start.line + 1;
-        this.clazz = this.getClass(lineNumber);
+        let clazz = this.getClass(lineNumber);
 
-        // * Class independent code actions.
+        // Class independent code actions.
         const codeActions = [
             this.createImportsFix(lineNumber, this.reader.imports),
         ];
 
-        if (this.clazz == null || !this.clazz.isValid) {
+        if (clazz == null || !clazz.isValid) {
             return codeActions;
         }
 
-        const isAtClassDeclaration = lineNumber == this.clazz.startsAtLine;
-        const isInProperties = this.clazz.properties.find((p) => p.lineNumber == lineNumber) != undefined;
-        const isInConstrRange = lineNumber >= this.clazz.constrStartsAtLine && lineNumber <= this.clazz.constrEndsAtLine;
+        let isInConstrRange = false;
+        if (clazz.hasConstructor) {
+            let constr = clazz.findPart('constructor')
+            isInConstrRange = lineNumber >= constr.startsAt && lineNumber <= constr.endsAt
+        }
+        const isAtClassDeclaration = lineNumber == clazz.startsAt;
+        const isInProperties = clazz.properties.find((p) => p.lineNumber == lineNumber) != undefined;
         if (!(isAtClassDeclaration || isInProperties || isInConstrRange)) return codeActions;
 
+        // TODO: This executes every time a cursor moves on the class range, but there is no need
         // * Class code actions.
-        if (!this.clazz.isWidget)
-            codeActions.push(this.createDataClassFix(this.clazz));
+        if (!clazz.isWidget)
+            codeActions.push(this.createDataClassFix(clazz));
 
         if (readSetting('constructor.enabled'))
-            codeActions.push(this.createConstructorFix());
+            codeActions.push(this.createConstructorFix(clazz));
 
         // Only add constructor fix for widget classes.
-        if (!this.clazz.isWidget) {
+        if (!clazz.isWidget) {
             // Copy with and JSON serialization should be handled by
             // subclasses.
-            if (!this.clazz.isAbstract) {
+            if (!clazz.isAbstract) {
                 if (readSetting('copyWith.enabled'))
-                    codeActions.push(this.createCopyWithFix());
+                    codeActions.push(this.createCopyWithFix(clazz));
                 if (readSettings(['toMap.enabled', 'fromMap.enabled', 'toJson.enabled', 'fromJson.enabled']))
-                    codeActions.push(this.createSerializationFix());
+                    codeActions.push(this.createSerializationFix(clazz));
             }
 
             if (readSetting('toString.enabled'))
-                codeActions.push(this.createToStringFix());
+                codeActions.push(this.createToStringFix(clazz));
 
-            if (this.clazz.usesEquatable || readSetting('useEquatable'))
-                codeActions.push(this.createUseEquatableFix());
+            if (clazz.usesEquatable || readSetting('useEquatable'))
+                codeActions.push(this.createUseEquatableFix(clazz));
             else {
                 if (readSettings(['equality.enabled', 'hashCode.enabled']))
-                    codeActions.push(this.createEqualityFix());
+                    codeActions.push(this.createEqualityFix(clazz));
             }
         }
 
@@ -118,62 +122,72 @@ class DataClassCodeActions {
     createDataClassFix(clazz) {
         if (clazz.didChange) {
             const fix = new vscode.CodeAction('Generate data class', vscode.CodeActionKind.QuickFix);
-            fix.edit = this.getClazzEdit(clazz);
+            fix.edit = this.getClazzEdit(clazz, null);
             return fix;
         }
     }
 
+    // FIXME: This builds a new class replacement, specific for a given fix
+    // Before, it was executing the generator for every fix, which included a reparsing of the text
     /**
-     * @param {string} part
+     * @param {DartClass} theClass
+     * @param {string} groupName
      * @param {string} description
      */
-    constructQuickFix(part, description) {
-        const generator = new DataClassGenerator(this.document.getText(), null, false, part, this.isFlutter, this.projectName);
+    constructQuickFix(theClass, groupName, description) {
+        // const generator = new DataClassGenerator(this.reader.theClasses, this.reader.imports, false, partName, this.isFlutter, this.projectName);
         const fix = new vscode.CodeAction(description, vscode.CodeActionKind.QuickFix);
-        const clazz = this.findQuickFixClazz(generator);
+        const clazz = this.findQuickFixClazz(theClass, groupName);
+        // console.warn(`${clazz.toReplace.length} replaces / ${clazz.toInsert.length} inserts / ${clazz.toReplace}`)
         if (clazz != null && clazz.didChange) {
-            fix.edit = this.getClazzEdit(clazz, generator.imports);
+            fix.edit = this.getClazzEdit(clazz, this.generator.imports);
             return fix;
         }
     }
 
-    /** @param {DataClassGenerator} generator */
-    findQuickFixClazz(generator) {
-        for (let clazz of generator.clazzes) {
-            if (clazz.name == this.clazz.name)
-                return clazz;
-        }
+    // FIXME: This returns the whole class replacement set, not just the fix required
+    /**
+     *  @param {DartClass} theClass 
+     *  @param {string} groupName 
+     * */
+    findQuickFixClazz(theClass, groupName) {
+        // for (let aClass of this.generator.clazzes) {
+        //     if (aClass.name == theClass.name) {
+                return theClass.filterForPartGroup(groupName);
+            // }
+        // }
     }
 
     /**
      * @param {DartClass} clazz
+     * @param {Imports} imports
      */
     getClazzEdit(clazz, imports = null) {
-        return getReplaceEdit(clazz, imports || this.generator.imports);
+        return getReplaceEdit(clazz, imports || this.generator.imports, false);
     }
 
-    createConstructorFix() {
-        return this.constructQuickFix('constructor', 'Generate constructor');
+    createConstructorFix(clazz) {
+        return this.constructQuickFix(clazz, 'constructor', 'Generate constructor');
     }
 
-    createCopyWithFix() {
-        return this.constructQuickFix('copyWith', 'Generate copyWith');
+    createCopyWithFix(clazz) {
+        return this.constructQuickFix(clazz, 'copyWith', 'Generate copyWith');
     }
 
-    createSerializationFix() {
-        return this.constructQuickFix('serialization', 'Generate JSON serialization');
+    createSerializationFix(clazz) {
+        return this.constructQuickFix(clazz, 'serialization', 'Generate JSON serialization');
     }
 
-    createToStringFix() {
-        return this.constructQuickFix('toString', 'Generate toString');
+    createToStringFix(clazz) {
+        return this.constructQuickFix(clazz, 'toString', 'Generate toString');
     }
 
-    createEqualityFix() {
-        return this.constructQuickFix('equality', 'Generate equality');
+    createEqualityFix(clazz) {
+        return this.constructQuickFix(clazz, 'equality', 'Generate equality');
     }
 
-    createUseEquatableFix() {
-        return this.constructQuickFix('useEquatable', `Generate Equatable`);
+    createUseEquatableFix(clazz) {
+        return this.constructQuickFix(clazz, 'useEquatable', `Generate Equatable`);
     }
 
     /**
@@ -183,7 +197,7 @@ class DataClassCodeActions {
     createImportsFix(lineNumber, imports) {
         if (!imports.shouldChange) return;
 
-        const inImportsRange = lineNumber >= imports.startAtLine && lineNumber <= imports.endAtLine;
+        const inImportsRange = lineNumber >= imports.startsAt && lineNumber <= imports.endsAt;
         if (inImportsRange) {
             let title = 'Sort imports';
             if (imports.hasImportDeclaration && imports.hasExportDeclaration) {
@@ -203,7 +217,7 @@ class DataClassCodeActions {
      */
     getClass(lineNumber) {
         for (let clazz of this.generator.clazzes) {
-            if (clazz.startsAtLine <= lineNumber && clazz.endsAtLine >= lineNumber) {
+            if (clazz.startsAt <= lineNumber && clazz.endsAt >= lineNumber) {
                 return clazz;
             }
         }

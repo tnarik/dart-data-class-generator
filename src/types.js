@@ -9,16 +9,19 @@ const {
     createFileName,
     getDoc,
 } = require('./helpers');
+const { group } = require('console');
 
+/**
+ * This class describes the class and filename binding
+ * 
+ */
 class DartFile {
     /**
      * @param {DartClass} clazz
-     * @param {string} content
      */
-    constructor(clazz, content = null) {
+    constructor(clazz) {
         this.clazz = clazz;
         this.name = createFileName(clazz.name);
-        this.content = content || clazz.classContent;
     }
 }
 
@@ -34,22 +37,19 @@ class DartClass {
         this.interfaces = [];
         /** @type {string[]} */
         this.mixins = [];
-        /** @type {string} */
-        this.constr = null;
         /** @type {DartClassProperty[]} */
         this.properties = [];
         /** @type {number} */
-        this.startsAtLine = null;
+        this.startsAt = null;
         /** @type {number} */
-        this.endsAtLine = null;
-        /** @type {number} */
-        this.constrStartsAtLine = null;
-        /** @type {number} */
-        this.constrEndsAtLine = null;
-        this.constrDifferent = false;
+        this.endsAt = null;
+        // this.constrDifferent = false;
         this.isArray = false;
-        this.classContent = '';
-        this.toInsert = '';
+        this.initialSourceCode = '';
+        /** @type {ClassPart[]} */
+        this.initialParts = [];
+        /** @type {ClassPart[]} */
+        this.toInsert = [];
         /** @type {ClassPart[]} */
         this.toReplace = [];
         this.isLastInFile = false;
@@ -88,23 +88,24 @@ class DartClass {
     }
 
     get classDetected() {
-        return this.startsAtLine != null;
+        return this.startsAt != null;
     }
 
     get didChange() {
-        return this.toInsert.length > 0 || this.toReplace.length > 0 || this.constrDifferent;
+        return this.toInsert.length > 0 || this.toReplace.length > 0;// || this.constrDifferent;
     }
 
     get hasNamedConstructor() {
-        if (this.constr != null) {
-            return this.constr.replace('const', '').trimLeft().startsWith(this.name + '({');
+        if (this.findPart('constructor') != null) {
+            return this.findPart('constructor').current.replace('const', '').trimLeft().startsWith(this.name + '({');
         }
 
         return true;
     }
 
     get hasConstructor() {
-        return this.constrStartsAtLine != null && this.constrEndsAtLine != null && this.constr != null;
+        return this.findPart('constructor') != null;
+        // return this.constrStartsAtLine != null && this.constrEndsAtLine != null && this.constr != null;
     }
 
     get hasMixins() {
@@ -116,7 +117,7 @@ class DartClass {
     }
 
     get hasEnding() {
-        return this.endsAtLine != null;
+        return this.endsAt != null;
     }
 
     get hasProperties() {
@@ -144,7 +145,7 @@ class DartClass {
     }
 
     get isAbstract() {
-        return this.classContent ? this.classContent.trimLeft().startsWith('abstract class') : this.abstract;
+        return this.abstract;
     }
 
     get usesEquatable() {
@@ -179,70 +180,119 @@ class DartClass {
     }
 
     /**
+     * @param {string} name
+     * @param {string} groupName
+     */
+    findPart(name, groupName=null) {
+        for (const part of this.initialParts) {
+            if (part.name == name && (groupName == null || part.groupName == groupName))
+                return part
+        }
+        return null;
+    }
+
+    /**
      * @param {number} line
      */
-    replacementAtLine(line) {
+    partAtLine(line) {
         for (let part of this.toReplace) {
             if (part.startsAt <= line && part.endsAt >= line) {
-                return part.replacement;
+                return part;
             }
         }
 
         return null;
     }
 
-    generateClassReplacement() {
-        let replacement = '';
-        let lines = this.classContent.split('\n');
+    /**
+     * Returns reduced version of class with only group related edits
+     * @param {string} groupName
+     */
+     filterForPartGroup(groupName) {
+        let newClass = Object.create(this);
 
-        for (let i = this.endsAtLine - this.startsAtLine; i >= 0; i--) {
+        newClass.toReplace = []
+        for (let part of this.toReplace) {
+            if (part.groupName == groupName) {
+                newClass.toReplace.push(part);
+            }
+        }
+        newClass.toInsert = []
+        for (let part of this.toInsert) {
+            if (part.groupName == groupName) {
+                newClass.toInsert.push(part);
+            }
+        }
+        return newClass;
+    }
+
+    getClassDeclaration() {
+        const classType = this.isAbstract ? 'abstract class' : 'class';
+        let classDeclaration = classType + ' ' + this.name + this.fullGenericType;
+        if (this.superclass != null) {
+            classDeclaration += ' extends ' + this.superclass;
+        }
+
+        if (this.mixins.length > 0) {
+            classDeclaration += ` with ${this.mixins.join(', ')}`
+        }
+        if (this.interfaces.length > 0) {
+            classDeclaration += ` implements ${this.interfaces.join(', ')}` 
+        }
+
+        classDeclaration += ' {';
+        return classDeclaration;
+    }
+
+    // HACK: This generates the FULL class text replacement (pretty ugly)
+    generateClassReplacement() {
+        console.error('generate -> CLASS <- replacement')
+        let replacement = '';
+
+        // REMOVE No need for initialSourceCode as generateClassReplacement is based on exiting workspace code
+        // let lines = this.initialSourceCode.split('\n');
+
+        let lines = getDoc().getText(new vscode.Range(
+            new vscode.Position((this.startsAt - 1), 0),
+            new vscode.Position(this.endsAt, 1)
+        )).split('\n');;
+        
+        for (let i = this.endsAt - this.startsAt; i >= 0; i--) {
             let line = lines[i] + '\n';
-            let l = this.startsAtLine + i;
+            let lineNumber = this.startsAt + i;
 
             if (i == 0) {
-                const classType = this.isAbstract ? 'abstract class' : 'class';
-                let classDeclaration = classType + ' ' + this.name + this.fullGenericType;
-                if (this.superclass != null) {
-                    classDeclaration += ' extends ' + this.superclass;
-                }
-
-                /**
-                 * @param {string[]} list
-                 * @param {string} keyword
-                 */
-                function addSuperTypes(list, keyword) {
-                    if (list.length == 0) return;
-
-                    const length = list.length;
-                    classDeclaration += ` ${keyword} `;
-                    for (let x = 0; x < length; x++) {
-                        const isLast = x == length - 1;
-                        const type = list[x];
-                        classDeclaration += type;
-
-                        if (!isLast) {
-                            classDeclaration += ', ';
-                        }
-                    }
-                }
-
-                addSuperTypes(this.mixins, 'with');
-                addSuperTypes(this.interfaces, 'implements');
-
-                classDeclaration += ' {\n';
+                let classDeclaration = this.getClassDeclaration() + '\n';
                 replacement = classDeclaration + replacement;
-            } else if (l == this.propsEndAtLine && this.constr != null && !this.hasConstructor) {
-                replacement = this.constr + replacement;
+            // This is handled as insertion or replacement
+            // } else if (lineNumber == this.propsEndAtLine && this.constr != null && !this.hasConstructor) {
+            //     // Insert constructor after properties
+            //     replacement = this.constr + replacement;
+            //     replacement = line + replacement;
+            } else if (lineNumber == this.endsAt && this.isValid) {
+                // Insert at the end
                 replacement = line + replacement;
-            } else if (l == this.endsAtLine && this.isValid) {
-                replacement = line + replacement;
-                replacement = this.toInsert + replacement;
+                // replacement = this.toInsert + replacement;
+                for (let part of this.toInsert) {
+                    replacement = part.replacement + replacement;
+                }
+            
             } else {
-                let rp = this.replacementAtLine(l);
-                if (rp != null) {
-                    if (!replacement.includes(rp))
-                        replacement = rp + '\n' + replacement;
+                // Check for replacement
+                let replacementPart = this.partAtLine(lineNumber);
+                // console.log(`looking for replacement at ${lineNumber}`)
+                if (replacementPart != null) {
+                    if (!replacement.includes(replacementPart.replacement)) {
+                        // console.warn(`prepending the following: ${replacementPart.replacement}`)
+                        replacement = replacementPart.replacement + '\n' + replacement;
+
+                        // skip source code to replace
+                        i -= (replacementPart.endsAt - replacementPart.startsAt)
+                    } else {
+                        console.warn('REPLACEMENT ALREADY included ')
+                    }
                 } else {
+                    // Passthru line if not replacement
                     replacement = line + replacement;
                 }
             }
@@ -265,9 +315,9 @@ class DartClass {
         /** @type {string[]} */
         this.values = [];
         /** @type {number} */
-        this.startAtLine = null;
+        this.startsAt = null;
         /** @type {number} */
-        this.endAtLine = null;
+        this.endsAt = null;
         /** @type {string} */
         this.rawStatements = '';
 
@@ -290,7 +340,7 @@ class DartClass {
     }
 
     get hasPreviousImports() {
-        return this.startAtLine != null && this.endAtLine != null;
+        return this.startsAt != null && this.endsAt != null;
     }
 
     get shouldChange() {
@@ -299,8 +349,8 @@ class DartClass {
 
     get range() {
         return new vscode.Range(
-            new vscode.Position(this.startAtLine - 1, 0),
-            new vscode.Position(this.endAtLine, 1),
+            new vscode.Position(this.startsAt - 1, 0),
+            new vscode.Position(this.endsAt, 1),
         );
     }
 
@@ -318,12 +368,12 @@ class DartClass {
             if (line.startsWith('import') || line.startsWith('export') || line.startsWith('part')) {
                 this.values.push(line);
                 this.rawStatements += `${line}\n`;
-                if (this.startAtLine == null) {
-                    this.startAtLine = i + 1;
+                if (this.startsAt == null) {
+                    this.startsAt = i + 1;
                 }
 
                 if (isLast) {
-                    this.endAtLine = i + 1;
+                    this.endsAt = i + 1;
                     break;
                 }
             } else {
@@ -331,11 +381,11 @@ class DartClass {
                 const importsSectionEnded = !(isInitialComment || line.startsWith('library') || isBlank(line));
                 
                 if (isLast || importsSectionEnded) {
-                    if (this.startAtLine != null) {
+                    if (this.startsAt != null) {
                         if (i > 0 && isBlank(lines[i - 1])) {
-                            this.endAtLine = i - 1;
+                            this.endsAt = i - 1;
                         } else {
-                            this.endAtLine = i;
+                            this.endsAt = i;
                         }
                     }
                     break;
@@ -533,16 +583,18 @@ class ClassPart {
 
     /**
      * @param {string} name
+     * @param {string} groupName
      * @param {number} startsAt
      * @param {number} endsAt
-     * @param {string} current
+     * @param {string} current Used to determine if the part is valid (has content) and compare on generator
      * @param {string} replacement
      */
-    constructor(name, startsAt = null, endsAt = null, current = null, replacement = null) {
+    constructor(name, groupName = null, startsAt = null, endsAt = null, current = null, replacement = null) {
         this.name = name;
+        this.groupName = groupName;
         this.startsAt = startsAt;
         this.endsAt = endsAt;
-        this.current = current;
+        this.current = '';
         this.replacement = replacement;
     }
 

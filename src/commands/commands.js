@@ -54,11 +54,11 @@ const {
 async function generateDataClass(isFlutter, projectName, text = getDocText()) {
     if (getLangId() == 'dart') {
         const reader = new DartClassReader(text, null, projectName);
-        const generator = new DataClassGenerator(text, null, false, null, isFlutter, projectName);
+        const generator = new DataClassGenerator(reader.theClasses, reader.imports,false, isFlutter, projectName);
         let theClasses = generator.clazzes;
 
         if (theClasses.length == 0) {
-            showError('No convertable dart classes were detected!');
+            showError('No convertible dart classes were detected!');
             return null;
         } else if (theClasses.length >= 2) {
             // Show a prompt if there is more than one class in the current editor.
@@ -69,7 +69,7 @@ async function generateDataClass(isFlutter, projectName, text = getDocText()) {
             }
         }
 
-        // FIXME: This looks into the replacement strings directly, because they were generated as a consequence of parsing
+        // FIXME: This looks into the replacement strings directly, because they were generated as a consequence of parsing (WRONG!)
         for (let aClass of theClasses) {
             if (aClass.isValid && aClass.toReplace.length > 0) {
                 if (readSetting('override.manual')) {
