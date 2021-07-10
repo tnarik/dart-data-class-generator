@@ -109,7 +109,7 @@ async function generateDataClass(isFlutter, projectName, text = getDocText()) {
 async function generateJsonDataClass(isFlutter, projectName) {
     let langId = getLangId();
     if (langId == 'dart') {
-        let document = getDocText();
+        let documentText = getDocText();
 
         const name = await vscode.window.showInputBox({
             placeHolder: 'Please type in a class name.'
@@ -119,7 +119,7 @@ async function generateJsonDataClass(isFlutter, projectName) {
             return;
         }
 
-        let reader = new JsonReader(isFlutter, projectName, document, name);
+        let reader = new JsonReader(isFlutter, projectName, documentText, name);
         let separate = true;
 
         if (await reader.error == null) {

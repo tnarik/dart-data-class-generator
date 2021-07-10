@@ -14,7 +14,6 @@ const {
     removeEnd,
     toVarName,
     createFileName,
-    getCurrentPath,
     writeFile,
 } = require('../helpers');
 
@@ -31,37 +30,28 @@ class JsonReader {
      * @param {string} className
      */
     constructor(isFlutter, projectName, source, className) {
-        this.json = this.toPlainJson(source);
-
         this.clazzName = capitalize(className);
         /** @type {DartClass[]} */
         this.clazzes = [];
         /** @type {DartFile[]} */
         this.files = [];
 
-        this.error = this.checkJson();
+        this.error = this.parseJson(source);
         this.isFlutter = isFlutter;
         this.projectName = projectName;
     }
 
-    async checkJson() {
-        const isArray = this.json.startsWith('[');
-        if (isArray && !this.json.includes('{')) {
+    async parseJson(source) {
+        const isArray = source.startsWith('[');
+        if (isArray && !source.includes('{')) {
             return 'Primitive JSON arrays are not supported! Please serialize them directly.';
         }
 
-        if (await this.generateFiles()) {
+        if (await this.generateClasses(source)) {
             return 'The provided JSON is malformed or couldn\'t be parsed!';
         }
 
         return null;
-    }
-
-    /**
-     * @param {string} source
-     */
-    toPlainJson(source) {
-        return source.replace(new RegExp(' ', 'g'), '').replace(new RegExp('\n', 'g'), '');
     }
 
     /**
@@ -166,9 +156,9 @@ class JsonReader {
         return i;
     }
 
-    async generateFiles() {
+    async generateClasses(source) {
         try {
-            const json = JSON.parse(this.json);
+            const json = JSON.parse(source);
             console.log('got json')
             this.getClazzes(json, this.clazzName);
             console.log('generated classes')
@@ -205,9 +195,9 @@ class JsonReader {
     addGeneratedFilesAsImport(generator) {
         const clazz = generator.clazzes[0];
         for (let prop of clazz.properties) {
-            // Import only inambigous generated types.
+            // Import only unambiguous generated types.
             // E.g. if there are multiple generated classes with
-            // the same name, do not include an import of that class.
+            // the same name, do not include an import for that class.
             if (this.getGeneratedTypeCount(prop.listType.rawType) == 1) {
                 const imp = `import '${createFileName(prop.listType.rawType)}.dart';`;
                 generator.imports.push(imp);
@@ -221,10 +211,9 @@ class JsonReader {
      */
     async commitJson(progress, separate) {
         console.log('committing JSON to file')
-        let sourcePath = getCurrentPath();
-        let fileContent = '';
 
         const length = this.files.length;
+        let fileContent = '';
         for (let i = 0; i < length; i++) {
             const file = this.files[i];
             const isLast = i == length - 1;
@@ -245,7 +234,7 @@ class JsonReader {
 
                 const replacement = imports + clazz.generateClassReplacement();
                 if (i > 0) {
-                    await writeFile(replacement, file.name, false, sourcePath);
+                    await writeFile(replacement, file.name, false);
                 } else {
                     await getEditor().edit(editor => {
                         editorReplace(editor, 0, null, replacement);

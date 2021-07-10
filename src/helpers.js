@@ -235,7 +235,7 @@ function removeEnd(source, end) {
  * @param {string} name
  */
  async function writeFile(content, name, open = true, destinationPath = getCurrentPath()) {
-    let p = destinationPath + name + '.dart';
+    let p = path.join(destinationPath, `${name}.dart`)
     if (fs.existsSync(p)) {
         let i = 0;
         do {
@@ -255,7 +255,7 @@ function removeEnd(source, end) {
 
 function getCurrentPath() {
     let currentPath = vscode.window.activeTextEditor.document.fileName;
-    return path.dirname(currentPath) + path.sep;
+    return path.dirname(currentPath);
 }
 
 /**
