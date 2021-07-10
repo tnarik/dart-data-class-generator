@@ -45,7 +45,7 @@ class DartClass {
         this.endsAt = null;
         // this.constrDifferent = false;
         this.isArray = false;
-        this.initialSourceCode = '';
+        // this.initialSourceCode = '';
         /** @type {ClassPart[]} */
         this.initialParts = [];
         /** @type {ClassPart[]} */
@@ -244,58 +244,27 @@ class DartClass {
         return classDeclaration;
     }
 
-    // FIXME: This generates the FULL class text replacement (pretty ugly) - It is only required for JSON processing which should currently use getFullReplaceEdit
+    // FIXME: This generates the FULL class text replacement - It is only required for JSON processing 
+    // (or other data class representation not relying on previous Dart code) which should currently use getFullReplaceEdit
     generateClassReplacement() {
-        console.error('generate -> CLASS <- replacement')
         let replacement = '';
 
-        // FIXME initialSourceCode required only for JSON processing. Generation from Class properties relies on workspace code, but doesn't use generateClassReplacement
-        let lines = this.initialSourceCode.split('\n');
-        // let lines = getDoc().getText(new vscode.Range(
-        //     new vscode.Position((this.startsAt - 1), 0),
-        //     new vscode.Position(this.endsAt, 1)
-        // )).split('\n');;
-        
-        for (let i = this.endsAt - this.startsAt; i >= 0; i--) {
-            let line = lines[i] + '\n';
-            let lineNumber = this.startsAt + i;
+        // class declaration
+        replacement = this.getClassDeclaration() + '\n';
 
-            if (i == 0) {
-                let classDeclaration = this.getClassDeclaration() + '\n';
-                replacement = classDeclaration + replacement;
-            // This is handled as insertion or replacement
-            // } else if (lineNumber == this.propsEndAtLine && this.constr != null && !this.hasConstructor) {
-            //     // Insert constructor after properties
-            //     replacement = this.constr + replacement;
-            //     replacement = line + replacement;
-            } else if (lineNumber == this.endsAt && this.isValid) {
-                // Insert at the end
-                replacement = line + replacement;
-                // replacement = this.toInsert + replacement;
-                for (let part of this.toInsert) {
-                    replacement = part.replacement + replacement;
-                }
-            
-            } else {
-                // Check for replacement
-                let replacementPart = this.partAtLine(lineNumber);
-                // console.log(`looking for replacement at ${lineNumber}`)
-                if (replacementPart != null) {
-                    if (!replacement.includes(replacementPart.replacement)) {
-                        // console.warn(`prepending the following: ${replacementPart.replacement}`)
-                        replacement = replacementPart.replacement + '\n' + replacement;
+        // properties
+        for (let property of this.properties) {
+            replacement += `  final ${property.type} ${toVarName(property.name)};\n`;
+        }
 
-                        // skip source code to replace
-                        i -= (replacementPart.endsAt - replacementPart.startsAt)
-                    } else {
-                        console.warn('REPLACEMENT ALREADY included ')
-                    }
-                } else {
-                    // Passthru line if not replacement
-                    replacement = line + replacement;
-                }
+        // methods (all to be inserted), only if class is valid (has properties)
+        // Part generation already takes into account validity, but it might be that properties were manipulated
+        if (this.isValid) {
+            for (const part of this.toInsert) {
+                replacement += part.replacement;
             }
         }
+        replacement += '}';
 
         return removeEnd(replacement, '\n');
     }
@@ -579,7 +548,6 @@ class DartClassProperty {
 }
 
 class ClassPart {
-
     /**
      * @param {string} name
      * @param {string} groupName

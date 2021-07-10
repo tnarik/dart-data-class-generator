@@ -30,7 +30,7 @@ class JsonReader {
      * @param {string} className
      */
     constructor(isFlutter, projectName, source, className) {
-        this.clazzName = capitalize(className);
+        this.className = capitalize(className);
         /** @type {DartClass[]} */
         this.clazzes = [];
         /** @type {DartFile[]} */
@@ -47,7 +47,7 @@ class JsonReader {
             return 'Primitive JSON arrays are not supported! Please serialize them directly.';
         }
 
-        if (await this.generateClasses(source)) {
+        if (await this.generateClassFiles(source)) {
             return 'The provided JSON is malformed or couldn\'t be parsed!';
         }
 
@@ -80,26 +80,26 @@ class JsonReader {
      * @param {string} key
      */
     getClazzes(object, key) {
-        let clazz = new DartClass();
-        clazz.startsAt = 1;
-        clazz.name = capitalize(key);
+        let aClazz = new DartClass();
+        aClazz.startsAt = 1;
+        aClazz.name = capitalize(key);
 
         let isArray = false;
         if (object instanceof Array) {
             isArray = true;
-            clazz.isArray = true;
-            clazz.name += 's';
+            aClazz.isArray = true;
+            aClazz.name += 's';
         } else {
             // Top level arrays are currently not supported!
-            this.clazzes.push(clazz);
+            this.clazzes.push(aClazz);
             console.log(`got ${this.clazzes.length} classes from JSON`)
         }
 
         let i = 1;
-        clazz.initialSourceCode += 'class ' + clazz.name + ' {\n';
+        // aClazz.initialSourceCode += 'class ' + aClazz.name + ' {\n';
         for (let key in object) {
             // named key for class names.
-            let k = !isArray ? key : removeEnd(clazz.name.toLowerCase(), 's');
+            let k = !isArray ? key : removeEnd(aClazz.name.toLowerCase(), 's');
 
             let value = object[key];
             let type = this.getPrimitive(value);
@@ -129,14 +129,14 @@ class JsonReader {
                 }
             }
 
-            clazz.properties.push(new DartClassProperty(type, k, ++i));
-            clazz.initialSourceCode += `  final ${type} ${toVarName(k)};\n`;
+            aClazz.properties.push(new DartClassProperty(type, k, ++i));
+            // aClazz.initialSourceCode += `  final ${type} ${toVarName(k)};\n`;
 
             // If object is JSONArray, break after first item.
             if (isArray) break;
         }
-        clazz.endsAt = ++i;
-        clazz.initialSourceCode += '}';
+        aClazz.endsAt = ++i;
+        // aClazz.initialSourceCode += '}';
     }
 
     /**
@@ -156,13 +156,11 @@ class JsonReader {
         return i;
     }
 
-    async generateClasses(source) {
+    async generateClassFiles(source) {
         try {
             const json = JSON.parse(source);
-            console.log('got json')
-            this.getClazzes(json, this.clazzName);
-            console.log('generated classes')
-            this.removeDuplicates();
+            this.getClazzes(json, this.className);
+            // this.removeDuplicates();
 
             for (let clazz of this.clazzes) {
                 this.files.push(new DartFile(clazz));
@@ -210,10 +208,8 @@ class JsonReader {
      * @param {boolean} separate
      */
     async commitJson(progress, separate) {
-        console.log('committing JSON to file')
-
-        const length = this.files.length;
         let fileContent = '';
+        const length = this.files.length;
         for (let i = 0; i < length; i++) {
             const file = this.files[i];
             const isLast = i == length - 1;
