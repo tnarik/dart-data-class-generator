@@ -98,66 +98,6 @@ class DataClassGenerator {
     }
 
     /**
-     * @param {string} name
-     * @param {string} finder
-     * @param {DartClass} clazz
-     */
-     REMOVEfindPartInSourceCode(name, groupName, finder, clazz) {
-        console.log(`looking for part ${name} with finder ${finder}`)
-        const normalize = (src) => {
-            let result = '';
-            let generics = 0;
-            let prevChar = '';
-            for (const char of src) {
-                if (char == '<') generics++;
-                if (char != ' ' && generics == 0) {
-                    result += char;
-                }
-
-                if (prevChar != '=' && char == '>') generics--;
-                prevChar = char;
-            }
-
-            return result;
-        }
-
-        const finderString = normalize(finder);
-        const lines = clazz.initialSourceCode.split('\n');
-        const part = new ClassPart(name, groupName);
-        let curlies = 0;
-        let singleLine = false;
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const lineNum = clazz.startsAt + i;
-
-            curlies += count(line, '{');
-            curlies -= count(line, '}');
-
-            if (part.startsAt == null && normalize(line).startsWith(finderString)) {
-                if (line.includes('=>')) singleLine = true;
-                if (curlies == 2 || singleLine) {
-                    part.startsAt = lineNum;
-                    part.current = line + '\n';
-                }
-            } else if (part.startsAt != null && part.endsAt == null && (curlies >= 2 || singleLine)) {
-                part.current += line + '\n';
-            } else if (part.startsAt != null && part.endsAt == null && curlies == 1) {
-                part.endsAt = lineNum;
-                part.current += line;
-            }
-
-            // Detect the end of a single line function by searching for the ';' because
-            // a single line function doesn't necessarily only have one single line.
-            if (singleLine && part.startsAt != null && part.endsAt == null && line.trimRight().endsWith(';')) {
-                part.endsAt = lineNum;
-            }
-        }
-
-        return part.isValid ? part : null;
-    }
-
-    /**
      * If class already exists and has a constructor with the parameter, reuse that parameter.
      * E.g. when the dev changed the parameter from this.x to this.x = y the generator inserts
      * this.x = y. This way the generator can preserve changes made in the constructor.
@@ -732,14 +672,12 @@ class DataClassGenerator {
         }
     }
 
-    // FIXME: Insert should be processed as text later on. At this point the important part is if the part is to be inserted
     /**
      * @param {string} method
      * @param {DartClass} clazz
      */
     append(method, clazz, partName = null, groupName = null) {
         let met = indent(method);
-        // console.log('got the constructor')
         const part = new ClassPart(partName, groupName);
         part.replacement = '\n//Added from append\n' + met;
         clazz.toInsert.push(part);
@@ -750,7 +688,6 @@ class DataClassGenerator {
      * @param {DartClass} clazz
      */
     replace(part, clazz) {
-        // console.log(`replace ${part.name}`)
         part.replacement = '//Added from replace\n' + part.replacement;
         clazz.toReplace.push(part);
     }

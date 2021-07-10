@@ -244,18 +244,17 @@ class DartClass {
         return classDeclaration;
     }
 
-    // HACK: This generates the FULL class text replacement (pretty ugly)
+    // FIXME: This generates the FULL class text replacement (pretty ugly) - It is only required for JSON processing which should currently use getFullReplaceEdit
     generateClassReplacement() {
         console.error('generate -> CLASS <- replacement')
         let replacement = '';
 
-        // REMOVE No need for initialSourceCode as generateClassReplacement is based on exiting workspace code
-        // let lines = this.initialSourceCode.split('\n');
-
-        let lines = getDoc().getText(new vscode.Range(
-            new vscode.Position((this.startsAt - 1), 0),
-            new vscode.Position(this.endsAt, 1)
-        )).split('\n');;
+        // FIXME initialSourceCode required only for JSON processing. Generation from Class properties relies on workspace code, but doesn't use generateClassReplacement
+        let lines = this.initialSourceCode.split('\n');
+        // let lines = getDoc().getText(new vscode.Range(
+        //     new vscode.Position((this.startsAt - 1), 0),
+        //     new vscode.Position(this.endsAt, 1)
+        // )).split('\n');;
         
         for (let i = this.endsAt - this.startsAt; i >= 0; i--) {
             let line = lines[i] + '\n';

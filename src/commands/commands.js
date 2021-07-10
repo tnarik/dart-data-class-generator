@@ -69,7 +69,6 @@ async function generateDataClass(isFlutter, projectName, text = getDocText()) {
             }
         }
 
-        // FIXME: This looks into the replacement strings directly, because they were generated as a consequence of parsing (WRONG!)
         for (let aClass of theClasses) {
             if (aClass.isValid && aClass.toReplace.length > 0) {
                 if (readSetting('override.manual')) {

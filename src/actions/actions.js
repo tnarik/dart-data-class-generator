@@ -71,8 +71,7 @@ class DataClassCodeActions {
         const isInProperties = clazz.properties.find((p) => p.lineNumber == lineNumber) != undefined;
         if (!(isAtClassDeclaration || isInProperties || isInConstrRange)) return codeActions;
 
-        // TODO: This executes every time a cursor moves on the class range, but there is no need
-        // * Class code actions.
+        // Class code actions.
         if (!clazz.isWidget)
             codeActions.push(this.createDataClassFix(clazz));
 
@@ -127,35 +126,28 @@ class DataClassCodeActions {
         }
     }
 
-    // FIXME: This builds a new class replacement, specific for a given fix
-    // Before, it was executing the generator for every fix, which included a reparsing of the text
     /**
+     * This builds a new class replacement, specific for a given fix
      * @param {DartClass} theClass
      * @param {string} groupName
      * @param {string} description
      */
     constructQuickFix(theClass, groupName, description) {
-        // const generator = new DataClassGenerator(this.reader.theClasses, this.reader.imports, false, partName, this.isFlutter, this.projectName);
         const fix = new vscode.CodeAction(description, vscode.CodeActionKind.QuickFix);
         const clazz = this.findQuickFixClazz(theClass, groupName);
-        // console.warn(`${clazz.toReplace.length} replaces / ${clazz.toInsert.length} inserts / ${clazz.toReplace}`)
         if (clazz != null && clazz.didChange) {
             fix.edit = this.getClazzEdit(clazz, this.generator.imports);
             return fix;
         }
     }
 
-    // FIXME: This returns the whole class replacement set, not just the fix required
     /**
+     * Returns only the subset of fixes required for groupName
      *  @param {DartClass} theClass 
      *  @param {string} groupName 
      * */
     findQuickFixClazz(theClass, groupName) {
-        // for (let aClass of this.generator.clazzes) {
-        //     if (aClass.name == theClass.name) {
-                return theClass.filterForPartGroup(groupName);
-            // }
-        // }
+        return theClass.filterForPartGroup(groupName);
     }
 
     /**
