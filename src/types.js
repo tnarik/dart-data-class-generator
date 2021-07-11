@@ -9,7 +9,6 @@ const {
     createFileName,
     getDoc,
 } = require('./helpers');
-const { group } = require('console');
 
 /**
  * This class describes the class and filename binding
@@ -247,10 +246,8 @@ class DartClass {
     // FIXME: This generates the FULL class text replacement - It is only required for JSON processing 
     // (or other data class representation not relying on previous Dart code) which should currently use getFullReplaceEdit
     generateClassReplacement() {
-        let replacement = '';
-
         // class declaration
-        replacement = this.getClassDeclaration() + '\n';
+        let replacement = this.getClassDeclaration() + '\n';
 
         // properties
         for (let property of this.properties) {
@@ -557,6 +554,7 @@ class ClassPart {
      * @param {string} replacement
      */
     constructor(name, groupName = null, startsAt = null, endsAt = null, current = null, replacement = null) {
+        console.log(`creating part ${name} / ${groupName}`)
         this.name = name;
         this.groupName = groupName;
         this.startsAt = startsAt;

@@ -1,14 +1,14 @@
 # Dart Data Class Generator (Beta)
 
-Create dart data classes easily, fast and without writing boilerplate or running code generation.  
+Create dart data classes easily from simple classes with properties or JSON payloads, without writing boilerplate.
 
 ## Features
 
-The generator can generate the constructor, copyWith, toMap, fromMap, toJson, fromJson, toString, operator == and hashCode methods for a class based on [class properties](#create-data-classes-based-on-class-properties) or [raw JSON](#create-data-classes-based-on-json-beta).
+The generator can generate the constructor, `copyWith`, `toMap`, `fromMap`, `toJson`, `fromJson`, `toString`, operator `==` and `hashCode` methods for a class based on [class properties](#create-data-classes-based-on-class-properties) or [raw JSON](#create-data-classes-based-on-json-beta).
 
 Additionally the generator has a couple of useful quickfixes to speed up your development process. See the [Additional Features Section](#additional-features) for more.
 
-If this extension is helpful to you, consider giving it a star on [GitHub](https://github.com/bnxm/Dart-Data-Class-Generator) or leave a review on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=BendixMa.dart-data-class-generator) :heart:
+This extension is a refactoring of [BendixMa's](https://github.com/bnxm/Dart-Data-Class-Generator) to provide better single concern classes/libraries by decoupling reading/parsing from code generation. This way less opinionated Dart classes can be generated via template support or extensions to the source code. If you are interested only in the default class generation from properties, you should be equally happy with the original [BendixMa extension](https://github.com/bnxm/Dart-Data-Class-Generator). Consider giving his repo a star on [GitHub](https://github.com/bnxm/Dart-Data-Class-Generator) or leave a review on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=BendixMa.dart-data-class-generator) or on this modified extension page. :heart:
 
 ## Create Data Classes Based on Class Properties
 
@@ -50,7 +50,7 @@ Although using the generator is fast, it still doesn't spare you from all the bo
 
 <img width="512" src="assets/equatable_demo.gif"/>
 
-You can also use the setting `dart_data_class_generator.useEquatable`, if you always want to use `Equatable` for value equality.
+You can also use the setting `dart-data-o-matic.useEquatable`, if you always want to use `Equatable` for value equality.
 
 ## Create Data Classes Based on JSON (Beta)
 
@@ -88,22 +88,22 @@ Sort imports alphabetically and bring them into the correct format easily.
 
 ## Settings
 
-You can customize the generator to only generate the functions you want in your settings file.
+You can customize the generator to only generate the functions you want in your settings file. If you already have a "Dart Data Class Generator" configuration you like, you can reuse those settings by simply copying them and replacing `dart_data_class_generator` by `dart-data-o-matic`. The only exception is `dart-data-o-matic.json.separate`, which had a typo in the corresponding "Dart Data Class Generator" configuration.
 
-* `dart_data_class_generator.quick_fixes`: If true, enables quick fixes to quickly generate data classes or specific methods only.
-* `dart_data_class_generator.useEquatable`: If true, uses Equatable for value equality and hashCode.
-* `dart_data_class_generator.fromMap.default_values`: If true, checks if a field is null when deserializing and provides a non-null default value.
-* `dart_data_class_generator.constructor.default_values`: If true, generates default values for the constructor.
-* `dart_data_class_generator.constructor.required`: If true, generates @required annotation for every constructor parameter. Note: The generator wont generate default values for the constructor if enabled!
-* `dart_data_class_generator.json.separate`: Whether to separate a JSON into multiple files, when the JSON contains nested objects. ask: choose manually every time, separate: always separate into multiple files, current_file: always insert all classes into the current file.
-* `dart_data_class_generator.override.manual`: If true, asks, when overriding a class (running the command on an existing class), for every single function/constructor that needs to be changed whether the generator should override the function or not. This allows you to preserve custom changes you made to the function/constructor that would be otherwise overwritten by the generator.
-* `dart_data_class_generator.constructor.enabled`: If true, generates a constructor for a data class.
-* `dart_data_class_generator.copyWith.enabled`: If true, generates a copyWith function for a data class.
-* `dart_data_class_generator.toMap.enabled`: If true, generates a toMap function for a data class.
-* `dart_data_class_generator.fromMap.enabled`: If true, generates a fromMap function for a data class.
-* `dart_data_class_generator.toJson.enabled`: If true, generates a toJson function for a data class.
-* `dart_data_class_generator.fromJson.enabled`: If true, generates a fromJson function for a data class.
-* `dart_data_class_generator.toString.enabled`: If true, generates a toString function for a data class.
-* `dart_data_class_generator.equality.enabled`: If true, generates an override of the == (equals) operator for a data class.
-* `dart_data_class_generator.hashCode.enabled`: If true, generates a hashCode function for a data class.
-* `dart_data_class_generator.hashCode.use_jenkins`: If true, uses the Jenkins SMI hash function instead of bitwise operator from dart:ui.
+* `dart-data-o-matic.quick_fixes`: If true, enables quick fixes to quickly generate data classes or specific methods only.
+* `dart-data-o-matic.useEquatable`: If true, uses Equatable for value equality and hashCode.
+* `dart-data-o-matic.fromMap.default_values`: If true, checks if a field is null when deserializing and provides a non-null default value.
+* `dart-data-o-matic.constructor.default_values`: If true, generates default values for the constructor.
+* `dart-data-o-matic.constructor.required`: If true, generates @required annotation for every constructor parameter. Note: The generator wont generate default values for the constructor if enabled!
+* `dart-data-o-matic.json.separate`: Whether to separate a JSON generated data model into multiple files, when the JSON contains nested objects. ask: choose manually every time, separate: always separate into multiple files, current_file: always insert all classes into the current file.
+* `dart-data-o-matic.override.manual`: If true, asks, when overriding a class (running the command on an existing class), for every single function/constructor that needs to be changed whether the generator should override the function or not. This allows you to preserve custom changes you made to the function/constructor that would be otherwise overwritten by the generator.
+* `dart-data-o-matic.constructor.enabled`: If true, generates a constructor for a data class.
+* `dart-data-o-matic.copyWith.enabled`: If true, generates a copyWith function for a data class.
+* `dart-data-o-matic.toMap.enabled`: If true, generates a toMap function for a data class.
+* `dart-data-o-matic.fromMap.enabled`: If true, generates a fromMap function for a data class.
+* `dart-data-o-matic.toJson.enabled`: If true, generates a toJson function for a data class.
+* `dart-data-o-matic.fromJson.enabled`: If true, generates a fromJson function for a data class.
+* `dart-data-o-matic.toString.enabled`: If true, generates a toString function for a data class.
+* `dart-data-o-matic.equality.enabled`: If true, generates an override of the == (equals) operator for a data class.
+* `dart-data-o-matic.hashCode.enabled`: If true, generates a hashCode function for a data class.
+* `dart-data-o-matic.hashCode.use_jenkins`: If true, uses the Jenkins SMI hash function instead of bitwise operator from dart:ui.

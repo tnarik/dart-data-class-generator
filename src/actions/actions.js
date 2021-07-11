@@ -48,6 +48,7 @@ class DataClassCodeActions {
             this.generator = new DataClassGenerator(this.reader.theClasses, this.reader.imports, false, this.isFlutter, this.projectName);
             this.documentVersion = document.version
         }
+        console.log('generating Code Actions')
 
         this.document = document;
         const lineNumber = range.start.line + 1;
@@ -120,6 +121,7 @@ class DataClassCodeActions {
      */
     createDataClassFix(clazz) {
         if (clazz.didChange) {
+            console.log('dataclass fix')
             const fix = new vscode.CodeAction('Generate data class', vscode.CodeActionKind.QuickFix);
             fix.edit = this.getClazzEdit(clazz, null);
             return fix;
@@ -133,6 +135,7 @@ class DataClassCodeActions {
      * @param {string} description
      */
     constructQuickFix(theClass, groupName, description) {
+        console.log(`creating quick fix for ${groupName}`)
         const fix = new vscode.CodeAction(description, vscode.CodeActionKind.QuickFix);
         const clazz = this.findQuickFixClazz(theClass, groupName);
         if (clazz != null && clazz.didChange) {

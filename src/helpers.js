@@ -40,7 +40,7 @@ function getLangId() {
  * @param {string} key
  */
  function readSetting(key) {
-    return vscode.workspace.getConfiguration().get('dart_data_class_generator.' + key);
+    return vscode.workspace.getConfiguration().get('dart-data-o-matic.' + key);
 }
 
 /**

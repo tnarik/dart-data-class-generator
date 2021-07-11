@@ -12,7 +12,6 @@ const {
     getEditor,
     capitalize,
     removeEnd,
-    toVarName,
     createFileName,
     writeFile,
 } = require('../helpers');
@@ -57,7 +56,7 @@ class JsonReader {
     /**
      * @param {any} value
      */
-    getPrimitive(value) {
+    getPrimitiveTypeFromValue(value) {
         let type = typeof (value);
         let sType = null;
 
@@ -79,7 +78,7 @@ class JsonReader {
      * @param {any} object
      * @param {string} key
      */
-    getClazzes(object, key) {
+    generateClass(object, key) {
         let aClazz = new DartClass();
         aClazz.startsAt = 1;
         aClazz.name = capitalize(key);
@@ -96,13 +95,12 @@ class JsonReader {
         }
 
         let i = 1;
-        // aClazz.initialSourceCode += 'class ' + aClazz.name + ' {\n';
         for (let key in object) {
             // named key for class names.
             let k = !isArray ? key : removeEnd(aClazz.name.toLowerCase(), 's');
 
             let value = object[key];
-            let type = this.getPrimitive(value);
+            let type = this.getPrimitiveTypeFromValue(value);
 
             if (type == null) {
                 if (value instanceof Array) {
@@ -112,55 +110,51 @@ class JsonReader {
                         // becomes a class name of Item.
                         if (k.endsWith('ies')) listType = removeEnd(k, 'ies') + 'y';
                         if (k.endsWith('s')) listType = removeEnd(k, 's');
-                        const i0 = this.getPrimitive(value[0]);
+                        const typeFirstItem = this.getPrimitiveTypeFromValue(value[0]);
 
-                        if (i0 == null) {
-                            this.getClazzes(value[0], listType);
+                        if (typeFirstItem == null) {
+                            this.generateClass(value[0], listType);
                             type = 'List<' + capitalize(listType) + '>';
                         } else {
-                            type = 'List<' + i0 + '>';
+                            type = 'List<' + typeFirstItem + '>';
                         }
                     } else {
                         type = 'List<dynamic>';
                     }
                 } else {
-                    this.getClazzes(value, k);
+                    this.generateClass(value, k);
                     type = !isArray ? capitalize(key) : `List<${capitalize(k)}>`;
                 }
             }
 
             aClazz.properties.push(new DartClassProperty(type, k, ++i));
-            // aClazz.initialSourceCode += `  final ${type} ${toVarName(k)};\n`;
-
             // If object is JSONArray, break after first item.
             if (isArray) break;
         }
         aClazz.endsAt = ++i;
-        // aClazz.initialSourceCode += '}';
     }
 
     /**
-     * @param {string} property
+     * @param {string} propertyType
      */
-    getGeneratedTypeCount(property) {
-        let p = new DartClassProperty(property, 'x');
+    getGeneratedTypeCount(propertyType) {
+        let p = new DartClassProperty(propertyType, 'x');
         let i = 0;
         if (!p.isPrimitive) {
-            for (let clazz of this.clazzes) {
-                if (clazz.name == p.rawType) {
+            for (let aClass of this.clazzes) {
+                if (aClass.name == p.rawType) {
                     i++;
                 }
             }
         }
-
         return i;
     }
 
     async generateClassFiles(source) {
         try {
             const json = JSON.parse(source);
-            this.getClazzes(json, this.className);
-            // this.removeDuplicates();
+            this.generateClass(json, this.className);
+            this.removeDuplicates();
 
             for (let clazz of this.clazzes) {
                 this.files.push(new DartFile(clazz));
@@ -174,16 +168,27 @@ class JsonReader {
     }
 
     // If multiple classes of the same class exist, remove the duplicates
-    // before writing them.
+    // , based on class name and properties (this should also be prevented during parsing)
     removeDuplicates() {
         let dedupClasses = [];
-        let clazzes = this.clazzes.map((aClass) => aClass.initialSourceCode);
-        clazzes.forEach((aClass, index) => {
-            if (clazzes.indexOf(aClass) == index) {
-                dedupClasses.push(this.clazzes[index]);
+        this.clazzes.forEach(aClass => {
+            let duplicated = false;
+            // name and properties check
+            for (const c of dedupClasses.filter(dedupClass => dedupClass.name === aClass.name )) {
+                if (c.properties.length == aClass.properties.length){
+                    let aClassPropertiesSorted = aClass.properties
+                        .map(prop => ({name: prop.name, t: prop.rawType}))
+                        .sort((a, b) => (a.name > b.name) ? 1 : -1)
+                    let cPropertiesSorted = c.properties
+                        .map(prop => ({name: prop.name, t: prop.rawType}))
+                        .sort((a, b) => (a.name > b.name) ? 1 : -1)
+                    if ( JSON.stringify(aClassPropertiesSorted) === JSON.stringify(cPropertiesSorted) )
+                        duplicated = true
+                        break;
+                }
             }
+            if (!duplicated) dedupClasses.push(aClass);
         });
-
         this.clazzes = dedupClasses;
     }
 
@@ -221,28 +226,24 @@ class JsonReader {
             const imports = `${generator.imports.formatted}\n`;
 
             progress.report({
-                increment: ((1 / length) * 100),
+                increment: 100*i/(length - 1),
                 message: `Creating file ${file.name}...`
             });
             console.warn(`Creating file ${file.name}`)
             if (separate) {
-                const clazz = generator.clazzes[0];
-
-                const replacement = imports + clazz.generateClassReplacement();
-                if (i > 0) {
-                    await writeFile(replacement, file.name, false);
+                const replacement = imports + generator.clazzes[0].generateClassReplacement();
+                if (i == 0) {
+                    await getEditor().edit(editor => editorReplace(editor, 0, null, replacement));
                 } else {
-                    await getEditor().edit(editor => {
-                        editorReplace(editor, 0, null, replacement);
-                    });
+                    await writeFile(replacement, file.name, false);
                 }
 
                 // Slow the writing process intentionally down.
                 await new Promise(resolve => setTimeout(() => resolve(), 120));
             } else {
                 // Insert in current file when JSON should not be separated.
-                for (let clazz of generator.clazzes) {
-                    fileContent += clazz.generateClassReplacement() + '\n\n';
+                for (let aClass of generator.clazzes) {
+                    fileContent += aClass.generateClassReplacement() + '\n\n';
                 }
 
                 if (isLast) {

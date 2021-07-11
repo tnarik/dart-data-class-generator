@@ -20,7 +20,7 @@ async function activate (context) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand(
-            'dart_data_class.generate.from_props',
+            'dart-data-o-matic.generate.from_props',
             () => {
                 generateDataClass(isFlutter, projectName);
             }
@@ -29,7 +29,7 @@ async function activate (context) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand(
-            'dart_data_class.generate.from_json',
+            'dart-data-o-matic.generate.from_json',
             () => {
                 generateJsonDataClass(isFlutter, projectName);
             }

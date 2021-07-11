@@ -666,10 +666,11 @@ class DataClassGenerator {
         if (part != null) {
             part.replacement = replacement;
             if (!areStrictEqual(part.current, part.replacement)) {
-                console.warn(`part ${part.name} is different`)
+                console.log(`scheduling replacment of ${partName} / ${groupName}`)
                 this.replace(part, clazz);
             }
         } else {
+            console.log(`scheduling appending of ${partName} / ${groupName}`)
             this.append(n, clazz, partName, groupName);
         }
     }
