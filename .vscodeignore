@@ -1,7 +1,10 @@
+.gitignore
 .vscode/**
 .vscode-test/**
 test/**
-.gitignore
 **/jsconfig.json
 **/*.map
 **/.eslintrc.json
+assets/src/**
+src/**
+node_modules/**

@@ -2,7 +2,7 @@
     "name": "dart-data-o-matic",
     "displayName": "Dart Data-O-matic (DarDO)",
     "description": "Create Dart data classes easily from simple classes with properties or JSON payloads",
-    "publisher": "Tnarik @ Le Café Automatique",
+    "publisher": "lecafeautomatique",
     "version": "0.6.0",
     "engines": {
         "vscode": "^1.37.0"
@@ -37,7 +37,7 @@
         "onCommand:dart-data-o-matic.generate.from_props",
         "onCommand:dart-data-o-matic.generate.from_json"
     ],
-    "main": "./src/extension.js",
+    "main": "./out/extension.js",
     "contributes": {
         "commands": [
             {
@@ -210,13 +210,20 @@
         }
     },
     "scripts": {
-        "test": "node ./test/runTest.js"
+        "test": "node ./test/runTest.js",
+        "vscode:prepublish": "npm run -s build-icon && npm run -s esbuild-base -- --minify",
+        "package": "npx vsce package",
+        "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+        "build": "npm run -s esbuild-base -- --sourcemap",
+        "watch": "npm run -s esbuild-base -- --sourcemap --watch",
+        "build-icon": "npx svgexport assets/src/icon.svg assets/icon.png 256:256 pad"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
         "@types/mocha": "^5.2.6",
         "@types/node": "^10.12.21",
         "@types/vscode": "^1.37.0",
+        "esbuild": "^0.12.15",
         "eslint": "^5.13.0",
         "glob": "^7.1.4",
         "mocha": "^6.1.4",

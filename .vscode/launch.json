@@ -12,7 +12,8 @@
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
-			]
+			],
+			"preLaunchTask": "npm: watch"
 		},
 		{
 			"name": "Extension Tests",
@@ -22,7 +23,8 @@
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--extensionTestsPath=${workspaceFolder}/test/suite/index"
-			]
+			],
+			"preLaunchTask": "npm: watch"
 		}
 	]
 }
