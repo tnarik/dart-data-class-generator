@@ -34,6 +34,7 @@
     ],
     "activationEvents": [
         "onLanguage:dart",
+        "workspaceContains:**/pubspec.yaml",
         "onCommand:dart-data-o-matic.generate.from_props",
         "onCommand:dart-data-o-matic.generate.from_json"
     ],
@@ -205,6 +206,69 @@
                     ],
                     "default": false,
                     "description": "If true, uses equatable for value equality and hashcode."
+                },
+                "dart-data-o-matic.templates": {
+                    "type": "array",
+                    "scope": "window",
+                    "description": "A list of templates available for class generation from JSON payloads",
+                    "default": [
+                        {
+                            "name": "build_value with serializer",
+                            "template": {
+                                "imports": [
+                                    "package:built_value/serializer.dart",
+                                    "package:built_value/built_value.dart"
+                                ],
+                                "code": [
+                                    "abstract class ${className} implements Built<${className}, ${className}Builder>{",
+                                    "${fieldsContent}",
+                                    "",
+                                    "  ${className}._();",
+                                    "",
+                                    "  static Serializer<${className}> get serializer => _$${className:/camelcase}Serializer;",
+                                    "  factory ${className}([void Function(${className}Builder) updates]) = _$${className};",
+                                    "}"
+                                ]
+                            }
+                        },
+                        {
+                            "name": "template1",
+                            "template": {
+                                "imports": [
+                                    "package:built_value/serializer.dart",
+                                    "package:built_value/built_value.dart"
+                                ],
+                                "code": [
+                                    "one",
+                                    "two",
+                                    "third line"
+                                ]
+                            }
+                        }
+                    ],
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "default": "",
+                                "minLength": 1,
+                                "pattern": "^([^\\s].*[^\\s]*)$"
+                            },
+                            "template": {
+                                "type": "array",
+                                "description": "Templated content",
+                                "default": [],
+                                "items": {
+                                    "type": "string",
+                                    "default": "",
+                                    "minLength": 1,
+                                    "pattern": "^([^\\s].*[^\\s]*)$"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
