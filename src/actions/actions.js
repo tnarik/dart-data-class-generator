@@ -23,14 +23,16 @@ class DataClassCodeActions {
     constructor(isFlutter, projectName) {
         this.reader = null;
         this.generator = null;
-        this.document = null;
         this.isFlutter = isFlutter;
         this.projectName = projectName;
-        this.documentVersion = -1
+        this.previousDocument = null;
+        this.previousDocumentVersion = -1
+        this.previousRange = null;
+        this.cachedCodeActions = [];
     }
 
     get uri() {
-        return this.document.uri;
+        return this.previousDocument.uri;
     }
 
     /**
@@ -41,16 +43,19 @@ class DataClassCodeActions {
         if (!readSetting('quick_fixes')) {
             return;
         }
-
-        if (!this.document || this.documentVersion != document.version) {
+        if (!this.previousDocument || this.previousDocument != document || this.previousDocumentVersion != document.version) {
             // Reparse only if there are changes
             this.reader = new DartClassReader(document.getText(), null, this.projectName);
             this.generator = new DataClassGenerator(this.reader.theClasses, this.reader.imports, false, this.isFlutter, this.projectName);
-            this.documentVersion = document.version
+            this.previousDocumentVersion = document.version
+        } else {
+          if (this.previousRange && this.previousRange.start.line == range.start.line && this.cachedCodeActions) {
+              return this.cachedCodeActions;
+          }
         }
-        console.log('generating Code Actions')
+        this.previousDocument = document;
+        this.previousRange = range;
 
-        this.document = document;
         const lineNumber = range.start.line + 1;
         let clazz = this.getClass(lineNumber);
 
@@ -101,6 +106,7 @@ class DataClassCodeActions {
             }
         }
 
+        this.cachedCodeActions = codeActions;
         return codeActions;
     }
 
@@ -121,7 +127,7 @@ class DataClassCodeActions {
      */
     createDataClassFix(clazz) {
         if (clazz.didChange) {
-            console.log('dataclass fix')
+            // console.log('dataclass fix')
             const fix = new vscode.CodeAction('Generate data class', vscode.CodeActionKind.QuickFix);
             fix.edit = this.getClazzEdit(clazz, null);
             return fix;
@@ -135,7 +141,7 @@ class DataClassCodeActions {
      * @param {string} description
      */
     constructQuickFix(theClass, groupName, description) {
-        console.log(`creating quick fix for ${groupName}`)
+        // console.log(`creating quick fix for ${groupName}`)
         const fix = new vscode.CodeAction(description, vscode.CodeActionKind.QuickFix);
         const clazz = this.findQuickFixClazz(theClass, groupName);
         if (clazz != null && clazz.didChange) {
@@ -146,8 +152,8 @@ class DataClassCodeActions {
 
     /**
      * Returns only the subset of fixes required for groupName
-     *  @param {DartClass} theClass 
-     *  @param {string} groupName 
+     *  @param {DartClass} theClass
+     *  @param {string} groupName
      * */
     findQuickFixClazz(theClass, groupName) {
         return theClass.filterForPartGroup(groupName);

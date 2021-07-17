@@ -23,7 +23,9 @@
         "dart",
         "data class generator",
         "class generator",
-        "json to dart"
+        "json to dart",
+        "dart templates",
+        "templates"
     ],
     "author": {
         "name": "Tnarik Innael"
@@ -34,11 +36,12 @@
     ],
     "activationEvents": [
         "onLanguage:dart",
-        "workspaceContains:**/pubspec.yaml",
+        "workspaceContains:pubspec.yaml",
         "onCommand:dart-data-o-matic.generate.from_props",
-        "onCommand:dart-data-o-matic.generate.from_json"
+        "onCommand:dart-data-o-matic.generate.from_json",
+        "onCommand:dart-data-o-matic.generate.from_json_with_template"
     ],
-    "main": "./out/extension.js",
+    "main": "./dist/extension.js",
     "contributes": {
         "commands": [
             {
@@ -48,6 +51,10 @@
             {
                 "title": "Dart Data-O-matic (DarDO): Generate from JSON",
                 "command": "dart-data-o-matic.generate.from_json"
+            },
+            {
+                "title": "Dart Data-O-matic (DarDO): Generate from JSON (templated)",
+                "command": "dart-data-o-matic.generate.from_json_with_template"
             }
         ],
         "configuration": {
@@ -277,7 +284,7 @@
         "test": "node ./test/runTest.js",
         "vscode:prepublish": "npm run -s build-icon && npm run -s esbuild-base -- --minify",
         "package": "npx vsce package",
-        "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+        "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
         "build": "npm run -s esbuild-base -- --sourcemap",
         "watch": "npm run -s esbuild-base -- --sourcemap --watch",
         "build-icon": "npx svgexport assets/src/icon.svg assets/icon.png 256:256 pad"

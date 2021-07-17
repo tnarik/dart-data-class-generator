@@ -1,5 +1,4 @@
 node_modules
 .vscode-test/
 *.vsix
-
-test_json.json
+dist

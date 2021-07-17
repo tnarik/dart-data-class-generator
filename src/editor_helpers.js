@@ -72,7 +72,7 @@ function editorDelete(editor, from = null, to = null) {
         if (clazz.isValid) {
             if (clazz.didChange) {
                 for(const rr of clazz.toReplace) {
-                    console.log(`toReplace (${rr.name}): ${rr.startsAt} til ${rr.endsAt}`)
+                    // console.log(`toReplace (${rr.name}): ${rr.startsAt} til ${rr.endsAt}`)
                     edit.replace(uri, new vscode.Range(
                         new vscode.Position(rr.startsAt - 1, 0),
                         new vscode.Position(rr.endsAt - 1, getDoc().lineAt(rr.endsAt-1).range.end.character)
@@ -80,7 +80,7 @@ function editorDelete(editor, from = null, to = null) {
                 }
 
                 for(const rr of clazz.toInsert) {
-                    console.log(`toInsert (${rr.name}): ${clazz.endsAt}`)
+                    // console.log(`toInsert (${rr.name}): ${clazz.endsAt}`)
                     edit.insert(uri, new vscode.Position(clazz.endsAt - 1, 0),
                         rr.replacement);
                 }

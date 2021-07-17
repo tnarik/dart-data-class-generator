@@ -73,13 +73,13 @@ class DataClassGenerator {
                             this.insertCopyWith(clazz);
                         if (readSetting('toMap.enabled') ) // part = serialization
                             this.insertToMap(clazz);
-                        console.warn('inserting FROM MAP')
+                        // console.warn('inserting FROM MAP')
                         if (readSetting('fromMap.enabled') ) // part = serialization
                             this.insertFromMap(clazz);
-                        console.warn('inserting TO JSON')
+                        // console.warn('inserting TO JSON')
                         if (readSetting('toJson.enabled') ) // part = serialization
                             this.insertToJson(clazz);
-                        console.warn('inserting FROM JSON')
+                        // console.warn('inserting FROM JSON')
                         if (readSetting('fromJson.enabled') ) // part = serialization
                             this.insertFromJson(clazz);
                     }
@@ -666,11 +666,11 @@ class DataClassGenerator {
         if (part != null) {
             part.replacement = replacement;
             if (!areStrictEqual(part.current, part.replacement)) {
-                console.log(`scheduling replacment of ${partName} / ${groupName}`)
+                // console.log(`scheduling replacement of ${partName} / ${groupName}`)
                 this.replace(part, clazz);
             }
         } else {
-            console.log(`scheduling appending of ${partName} / ${groupName}`)
+            // console.log(`scheduling appending of ${partName} / ${groupName}`)
             this.append(n, clazz, partName, groupName);
         }
     }

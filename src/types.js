@@ -554,7 +554,7 @@ class ClassPart {
      * @param {string} replacement
      */
     constructor(name, groupName = null, startsAt = null, endsAt = null, current = null, replacement = null) {
-        console.log(`creating part ${name} / ${groupName}`)
+        // console.log(`creating part ${name} / ${groupName}`)
         this.name = name;
         this.groupName = groupName;
         this.startsAt = startsAt;

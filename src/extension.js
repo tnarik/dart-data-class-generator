@@ -9,7 +9,8 @@ const {
 
 const{
     generateDataClass,
-    generateJsonDataClass,
+    generateDataClassFromJson,
+    generateDataClassFromJsonWithTemplate,
 } = require('./commands/commands');
 
 /**
@@ -31,11 +32,19 @@ async function activate (context) {
         vscode.commands.registerCommand(
             'dart-data-o-matic.generate.from_json',
             () => {
-                generateJsonDataClass(isFlutter, projectName);
+                generateDataClassFromJson(isFlutter, projectName);
             }
         )
     );
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'dart-data-o-matic.generate.from_json_with_template',
+            () => {
+                generateDataClassFromJsonWithTemplate(isFlutter, projectName);
+            }
+        )
+    );
     context.subscriptions.push(vscode.languages.registerCodeActionsProvider({
         language: 'dart',
         scheme: 'file'

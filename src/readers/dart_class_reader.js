@@ -220,9 +220,9 @@ class DartClassReader {
                 // closing class?
                 if (curlyBrackets === 0) {
                     aClass.endsAt = lineNumber;
-                    if (aClass != null) {
-                        console.warn(`previously had class: ${aClass.name} with ${aClass.initialParts.length} parts detected`)
-                    }
+                    // if (aClass != null) {
+                    //     console.warn(`previously had class: ${aClass.name} with ${aClass.initialParts.length} parts detected`)
+                    // }
                     aClass = null;
                 }
 

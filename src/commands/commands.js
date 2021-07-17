@@ -23,6 +23,8 @@ const {
     getReplaceEdit,
 } = require('../editor_helpers');
 
+// const {camelCase} = require('change-case'); // This introduces the largest penalty in startup time (10 ms, worth checking to understand it better)
+
 /**
  * @param {DartClass[]} theClasses
  */
@@ -93,7 +95,7 @@ async function generateDataClass(isFlutter, projectName, text = getDocText()) {
         await vscode.workspace.applyEdit(getReplaceEdit(theClasses, generator.imports, true));
         clearSelection();
 
-        console.log(theClasses);
+        // console.log(theClasses);
         return theClasses;
     } else {
         showError('Make sure that you\'re editing a dart file and then try again!');
@@ -106,7 +108,7 @@ async function generateDataClass(isFlutter, projectName, text = getDocText()) {
  * @param {boolean} isFlutter
  * @param {string} projectName
  */
-async function generateJsonDataClass(isFlutter, projectName) {
+async function generateDataClassFromJson(isFlutter, projectName) {
     let langId = getLangId();
     if (langId == 'dart') {
         let documentText = getDocText();
@@ -160,8 +162,66 @@ async function generateJsonDataClass(isFlutter, projectName) {
     }
 }
 
+/**
+ * @param {boolean} isFlutter
+ * @param {string} projectName
+ */
+ async function generateDataClassFromJsonWithTemplate(isFlutter, projectName) {
+    let langId = getLangId();
+    if (langId == 'dart') {
+        let documentText = getDocText();
+
+        const name = await vscode.window.showInputBox({
+            placeHolder: 'Please type in a class name.'
+        });
+
+        if (name == null || name.length == 0) {
+            return;
+        }
+
+        let reader = new JsonReader(isFlutter, projectName, documentText, name);
+        let separate = true;
+
+        if (await reader.error == null) {
+            if (reader.files.length >= 2) {
+                const setting = readSetting('json.separate');
+                if (setting == 'ask') {
+                    const r = await vscode.window.showQuickPick(['Yes', 'No'], {
+                        canPickMany: false,
+                        placeHolder: 'Do you wish to separate the JSON into multiple files?'
+                    });
+
+                    if (r != null) {
+                        separate = r == 'Yes';
+                    } else {
+                        return;
+                    }
+                } else {
+                    separate = (setting == 'separate');
+                }
+            }
+
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                cancellable: false
+            }, async function (progress, token) {
+                progress.report({ increment: 0, message: 'Generating Data Classes...' });
+                scrollTo(0);
+                await reader.commitJson(progress, separate);
+                clearSelection();
+            });
+        } else {
+            showError(await reader.error);
+        }
+    } else if (langId == 'json') {
+        showError('Please paste the JSON directly into an empty .dart file and then try again!');
+    } else {
+        showError('Make sure that you\'re editing a dart file and then try again!');
+    }
+}
 
 module.exports = {
     generateDataClass,
-    generateJsonDataClass,
+    generateDataClassFromJson,
+    generateDataClassFromJsonWithTemplate,
 }
