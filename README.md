@@ -4,7 +4,7 @@ Create dart data classes easily from simple classes with properties or JSON payl
 
 ## Motivation
 
-This is an extension based on [Dart Data Class Generator](https://github.com/bnxm/Dart-Data-Class-Generator) 0.5.0, by [BendixMa](https://github.com/bnxm). Although the **Dart Data Class Generator** is a very useful library, its code is structure a single file, and the concerns of the different functions and classes is not very well defined (a generator reads code and generates code partially, constructors are handled differently than other methods to be added, JSON processing is interspesed with the rest of the code, etc.).
+This is an extension based on [Dart Data Class Generator](https://github.com/bnxm/Dart-Data-Class-Generator) 0.5.0, by [BendixMa](https://github.com/bnxm). Although the **Dart Data Class Generator** is a very useful library, its code is structured as a single file, and the concerns of the different functions and classes is not very well defined (a generator reads code and generates code partially, class constructors are handled differently than other methods to be added, JSON processing is interspesed with the rest of the code, etc.).
 
 There is also the nice [JSON to Dart](https://github.com/hiranthar/Json-to-Dart-Model) extension by [hirantha](https://.github.com/hiranthaR) which does a better job at parsing JSON (and provides some nice options like working from clipboard content), but is heavily opinionated, automates too many things for my taste and is too verbose on the UX.
 
@@ -69,7 +69,7 @@ final Enum myEnum;
 
 #### Usage with Equatable
 
-Although using the generator is fast, it still doesn't spare you from all the boiler plate necessary, which can be visually distracting. To reduce the amount of boiler plate needed, the generator works with **Equatable**. Just extend the class with `Equatable` or mix with `EquatableMixin` and the generator will use `Equatable` for value equality. 
+Although using the generator is fast, it still doesn't spare you from all the boiler plate necessary, which can be visually distracting. To reduce the amount of boiler plate needed, the generator works with **Equatable**. Just extend the class with `Equatable` or mix with `EquatableMixin` and the generator will use `Equatable` for value equality.
 
 <img width="512" src="assets/equatable_demo.gif"/>
 
