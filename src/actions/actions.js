@@ -131,7 +131,7 @@ class DataClassCodeActions {
   createDataClassFix(clazz) {
     if (clazz.didChange) {
       // console.log('dataclass fix')
-      const fix = new vscode.CodeAction(localize('act.dtaclass', 'Generate data class 0'), vscode.CodeActionKind.QuickFix);
+      const fix = new vscode.CodeAction(localize('act.dtaclass', 'Generate data class'), vscode.CodeActionKind.QuickFix);
       fix.edit = this.getClazzEdit(clazz, null);
       return fix;
     }
@@ -171,23 +171,23 @@ class DataClassCodeActions {
   }
 
   createConstructorFix(clazz) {
-    return this.constructQuickFix(clazz, 'constructor', 'Generate constructor 0');
+    return this.constructQuickFix(clazz, 'constructor', 'Generate constructor');
   }
 
   createCopyWithFix(clazz) {
-    return this.constructQuickFix(clazz, 'copyWith', 'Generate copyWith 0');
+    return this.constructQuickFix(clazz, 'copyWith', 'Generate copyWith');
   }
 
   createSerializationFix(clazz) {
-    return this.constructQuickFix(clazz, 'serialization', 'Generate JSON serialization 0');
+    return this.constructQuickFix(clazz, 'serialization', 'Generate JSON serialization');
   }
 
   createToStringFix(clazz) {
-    return this.constructQuickFix(clazz, 'toString', 'Generate toString 0');
+    return this.constructQuickFix(clazz, 'toString', 'Generate toString');
   }
 
   createEqualityFix(clazz) {
-    return this.constructQuickFix(clazz, 'equality', 'Generate equality 0');
+    return this.constructQuickFix(clazz, 'equality', 'Generate equality');
   }
 
   createUseEquatableFix(clazz) {

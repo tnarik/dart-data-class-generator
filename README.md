@@ -1,16 +1,39 @@
-# Dart Data Class Generator (Beta)
+# Dart Data-O-matic (DarDO)
 
 Create dart data classes easily from simple classes with properties or JSON payloads, without writing boilerplate.
 
-## Features
+## Motivation
+
+This is an extension based on [Dart Data Class Generator](https://github.com/bnxm/Dart-Data-Class-Generator) 0.5.0, by [BendixMa](https://github.com/bnxm). Although the **Dart Data Class Generator** is a very useful library, its code is structure a single file, and the concerns of the different functions and classes is not very well defined (a generator reads code and generates code partially, constructors are handled differently than other methods to be added, JSON processing is interspesed with the rest of the code, etc.).
+
+There is also the nice [JSON to Dart](https://github.com/hiranthar/Json-to-Dart-Model) extension by [hirantha](https://.github.com/hiranthaR) which does a better job at parsing JSON (and provides some nice options like working from clipboard content), but is heavily opinionated, automates too many things for my taste and is too verbose on the UX.
+
+In an attempt to make it more maintainable and provide better support for JSON within VSCode, without being opinionated about the packages to use for the different methods, this extension is a heavy refactoring of **Dart Data Class Generator** that:
+
+* Preserves class compatibility with it (**quick actions are the same and will be in fact duplicated if you use both extensions**).
+* Reduces unnecessary processing if the document is not changing
+* Allows using your own templates for class generation via configuration (and **provides an under development template using built_value**) via a new command.
+* Fixes some typos on configuration variables.
+* Overall becomes simpler to maintain and migrate to Typescript.
+* Starts from **0.6.0** so that it is easier to understand where it comes from and how it is not a patched version of **Dart Data Class Generator**.
+* Allowed me to understand better howo VSCode extensions work.
+
+If you are happy with what [Dart Data Class Generator](https://github.com/bnxm/Dart-Data-Class-Generator) does right now, you don't need any of these.
+
+I'm currently focusing on the JSON parsing part of the extension, and check BendixMa repo weekly.
+
+
+## Features (as per Dart Data Class Generator)
 
 The generator can generate the constructor, `copyWith`, `toMap`, `fromMap`, `toJson`, `fromJson`, `toString`, operator `==` and `hashCode` methods for a class based on [class properties](#create-data-classes-based-on-class-properties) or [raw JSON](#create-data-classes-based-on-json-beta).
 
 Additionally the generator has a couple of useful quickfixes to speed up your development process. See the [Additional Features Section](#additional-features) for more.
 
-This extension is a refactoring of [BendixMa's](https://github.com/bnxm/Dart-Data-Class-Generator) to provide better single concern classes/libraries by decoupling reading/parsing from code generation. This way less opinionated Dart classes can be generated via template support or extensions to the source code. If you are interested only in the default class generation from properties, you should be equally happy with the original [BendixMa extension](https://github.com/bnxm/Dart-Data-Class-Generator). Consider giving his repo a star on [GitHub](https://github.com/bnxm/Dart-Data-Class-Generator) or leave a review on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=BendixMa.dart-data-class-generator) or on this modified extension page. :heart:
+## Additional features
 
-## Create Data Classes Based on Class Properties
+This extension is a refactoring of [BendixMa's](https://github.com/bnxm/Dart-Data-Class-Generator) to provide better single concern classes/libraries by decoupling reading/parsing from code generation. This way less opinionated Dart classes can be generated via template support (a `built_value` template is included) or even extensions to the source code. If you are interested only in the default class generation from properties, you should be happy already with the original [BendixMa extension](https://github.com/bnxm/Dart-Data-Class-Generator). Consider giving his repo a star on [GitHub](https://github.com/bnxm/Dart-Data-Class-Generator) or leave a review there on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=BendixMa.dart-data-class-generator) or on this modified extension page if you find it useful (leaving a review, I mean). :heart:
+
+## Create Data Classes Based on Class Properties (as per Dart Data Class Generator)
 
 ![](assets/gif_from_class.gif)
 
@@ -28,8 +51,8 @@ You can generate data classes either by the quick fix dialog or by running a com
 #### **Command**
 
 - Create a class with properties.
-- Hit **CTRL + P** to open the command dialog.
-- Search for **Dart Data Class Generator: Generate from class properties** and hit enter.
+- Hit **CTRL + P / Command + Shift + P** to open the command dialog.
+- Search for **Dart Data-O-matic (DarDO): Generate from class properties** and hit enter.
 - When there are multiple classes in the current file, choose the ones you'd like to create data classes of in the dialog.
 
 It is also possible to run the generator on an existing data class (e.g. when some parameters changed). The generator will then try to find the changes and replace the class with its updated version. **Note that custom changes to generated functions may be overriden**.
@@ -52,7 +75,7 @@ Although using the generator is fast, it still doesn't spare you from all the bo
 
 You can also use the setting `dart-data-o-matic.useEquatable`, if you always want to use `Equatable` for value equality.
 
-## Create Data Classes Based on JSON (Beta)
+## Create Data Classes Based on JSON
 
 ![](assets/gif_from_json.gif)
 
@@ -60,16 +83,27 @@ You can also use the setting `dart-data-o-matic.useEquatable`, if you always wan
 
 - Create an **empty dart** file.
 - Paste the **raw JSON without modifying it** into the otherwise empty file.
-- Hit **CTRL + P** to open the command dialog.
-- Search for **Dart Data Class Generator: Generate from JSON** and hit enter.
-- Type in a class name in the input dialog. This will be the name of the **top level class** if the JSON contains nested objects, all other class names will be infered from the JSON keys.
+- Hit **CTRL + P / Command + Shift + P** to open the command dialog.
+- Search for **Dart Data-O-matic (DarDO): Generate from JSON** and hit enter.
+- Enter a class name in the input dialog. This will be the name of the **top level class** if the JSON contains nested objects, all other class names will be infered from the JSON keys.
 - When there are nested objects in the JSON, a dialog will be appear if you want to separate the classes into multiple files or if all classes should be in the same file.
 
-> **Note:**  
-> **This feature is still in beta!**  
-> **Many API's return numbers like 0 or 1 as an integer and not as a double even when they otherwise are. Thus the generator may confuse a value that is usually a double as an int.**  
 
-## Additional Features
+
+## Create Data Classes Based on JSON (templated)
+
+### **Usage**
+
+- Create an **empty dart** file.
+- Paste the **raw JSON without modifying it** into the otherwise empty file (or modify it if you wish)
+- Hit **CTRL + P / Command + Shift + P** to open the command dialog.
+- Search for **Dart Data-O-matic (DarDO): Generate from JSON (templated)** and hit enter.
+- Select a template (additional templates can be added via settings).
+- Enter a class name in the input dialog. This will be the name of the **top level class** if the JSON contains nested objects, all other class names will be infered from the JSON keys.
+- When there are nested objects in the JSON, a dialog will be appear if you want to separate the classes into multiple files or if all classes should be in the same file.
+
+
+## Quick Actions
 
 The extension includes some additional quick fixes that might be useful to you:
 
@@ -86,9 +120,9 @@ Sort imports alphabetically and bring them into the correct format easily.
 <img width="512" src="assets/import_demo.gif"/>
 
 
-## Settings
+## Settings (DarDO)
 
-You can customize the generator to only generate the functions you want in your settings file. If you already have a "Dart Data Class Generator" configuration you like, you can reuse those settings by simply copying them and replacing `dart_data_class_generator` by `dart-data-o-matic`. The only exception is `dart-data-o-matic.json.separate`, which had a typo in the corresponding "Dart Data Class Generator" configuration.
+You can customize the generator to only generate the functions you want in your settings file. If you already have a **Dart Data Class Generator** configuration you like, you can reuse those settings by simply copying them and replacing `dart_data_class_generator` by `dart-data-o-matic`. The only exception is `dart-data-o-matic.json.separate`, which had a typo in the corresponding **Dart Data Class Generator** configuration.
 
 * `dart-data-o-matic.quick_fixes`: If true, enables quick fixes to quickly generate data classes or specific methods only.
 * `dart-data-o-matic.useEquatable`: If true, uses Equatable for value equality and hashCode.
