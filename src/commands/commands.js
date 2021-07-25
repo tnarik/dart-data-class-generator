@@ -25,6 +25,10 @@ const {
 
 const {camelCase} = require('change-case'); // This introduces the largest penalty in startup time (10 ms, worth checking to understand it better)
 
+const nls = require('vscode-nls');
+
+let localize = nls.loadMessageBundle();
+
 /**
  * @param {DartClass[]} theClasses
  */
@@ -54,7 +58,7 @@ const {camelCase} = require('change-case'); // This introduces the largest penal
  * @param {string} projectName
  */
 async function generateDataClass(isFlutter, projectName, text = getDocText()) {
-  console.log(`asdf ${camelCase('arriba la vida')}`)
+  console.log(`CamelCase ${camelCase(localize('testKey1','arriba la vida'))}`)
     if (getLangId() == 'dart') {
         const reader = new DartClassReader(text, null, projectName);
         const generator = new DataClassGenerator(reader.theClasses, reader.imports,false, isFlutter, projectName);
@@ -167,7 +171,7 @@ async function generateDataClassFromJson(isFlutter, projectName) {
  * @param {boolean} isFlutter
  * @param {string} projectName
  */
- async function generateDataClassFromJsonWithTemplate(isFlutter, projectName) {
+async function generateDataClassFromJsonWithTemplate(isFlutter, projectName) {
     // If there are templates, then go ahead
     let templates = readSetting('templates') || [];
     if (!templates.length) {

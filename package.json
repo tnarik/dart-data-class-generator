@@ -45,16 +45,19 @@
     "contributes": {
         "commands": [
             {
-                "title": "Dart Data-O-matic (DarDO): Generate from class properties",
-                "command": "dart-data-o-matic.generate.from_props"
+                "title": "%extension.command.generateDataClass%",
+                "command": "dart-data-o-matic.generate.from_props",
+                "category": "Dart Data-O-matic (DarDO)"
             },
             {
-                "title": "Dart Data-O-matic (DarDO): Generate from JSON",
-                "command": "dart-data-o-matic.generate.from_json"
+                "title": "%extension.command.generateDataClassFromJson%",
+                "command": "dart-data-o-matic.generate.from_json",
+                "category": "Dart Data-O-matic (DarDO)"
             },
             {
-                "title": "Dart Data-O-matic (DarDO): Generate from JSON (templated)",
-                "command": "dart-data-o-matic.generate.from_json_with_template"
+                "title": "%extension.command.generateDataClassFromJsonWithTemplate%",
+                "command": "dart-data-o-matic.generate.from_json_with_template",
+                "category": "Dart Data-O-matic (DarDO)"
             }
         ],
         "configuration": {
@@ -299,9 +302,11 @@
         "glob": "^7.1.4",
         "mocha": "^6.1.4",
         "typescript": "^3.3.1",
+        "vscode-nls-dev": "^3.3.2",
         "vscode-test": "^1.0.2"
     },
     "dependencies": {
-        "change-case": "^4.1.2"
+        "change-case": "^4.1.2",
+        "vscode-nls": "^5.0.0"
     }
 }
