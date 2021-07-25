@@ -334,7 +334,8 @@ class DartClass {
       // process imports/parts/etc.
       template.template.imports.forEach(packageToImport => importList.requiresImport(this.replaceTemplatedContent([packageToImport], replaceValues)));
       // Apply replacement values to template
-      let classContent = '\n//A test with template driven code \n' + this.replaceTemplatedContent(template.template.code, replaceValues);
+      // let classContent = '\n//A test with template driven code \n' + this.replaceTemplatedContent(template.template.code, replaceValues);
+      let classContent = '\n'+this.replaceTemplatedContent(template.template.code, replaceValues);
       return [classContent, importList];
     }
   }
