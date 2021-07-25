@@ -1,3 +1,6 @@
+const nls = require('vscode-nls');
+let localize = nls.loadMessageBundle();
+
 const vscode = require('vscode');
 const {DartClassReader} = require('../readers/dart_class_reader');
 const {DataClassGenerator} = require('../data_class_generator');
@@ -128,7 +131,7 @@ class DataClassCodeActions {
     createDataClassFix(clazz) {
         if (clazz.didChange) {
             // console.log('dataclass fix')
-            const fix = new vscode.CodeAction('Generate data class', vscode.CodeActionKind.QuickFix);
+            const fix = new vscode.CodeAction(localize('act.dtaclass', 'Generate data class 0'), vscode.CodeActionKind.QuickFix);
             fix.edit = this.getClazzEdit(clazz, null);
             return fix;
         }
@@ -142,7 +145,7 @@ class DataClassCodeActions {
      */
     constructQuickFix(theClass, groupName, description) {
         // console.log(`creating quick fix for ${groupName}`)
-        const fix = new vscode.CodeAction(description, vscode.CodeActionKind.QuickFix);
+        const fix = new vscode.CodeAction(localize('act.dtaclass2', description), vscode.CodeActionKind.QuickFix);
         const clazz = this.findQuickFixClazz(theClass, groupName);
         if (clazz != null && clazz.didChange) {
             fix.edit = this.getClazzEdit(clazz, this.generator.imports);
@@ -168,23 +171,23 @@ class DataClassCodeActions {
     }
 
     createConstructorFix(clazz) {
-        return this.constructQuickFix(clazz, 'constructor', 'Generate constructor');
+        return this.constructQuickFix(clazz, 'constructor', 'Generate constructor 0');
     }
 
     createCopyWithFix(clazz) {
-        return this.constructQuickFix(clazz, 'copyWith', 'Generate copyWith');
+        return this.constructQuickFix(clazz, 'copyWith', 'Generate copyWith 0');
     }
 
     createSerializationFix(clazz) {
-        return this.constructQuickFix(clazz, 'serialization', 'Generate JSON serialization');
+        return this.constructQuickFix(clazz, 'serialization', 'Generate JSON serialization 0');
     }
 
     createToStringFix(clazz) {
-        return this.constructQuickFix(clazz, 'toString', 'Generate toString');
+        return this.constructQuickFix(clazz, 'toString', 'Generate toString 0');
     }
 
     createEqualityFix(clazz) {
-        return this.constructQuickFix(clazz, 'equality', 'Generate equality');
+        return this.constructQuickFix(clazz, 'equality', 'Generate equality 0');
     }
 
     createUseEquatableFix(clazz) {

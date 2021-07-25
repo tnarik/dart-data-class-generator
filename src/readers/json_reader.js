@@ -6,6 +6,7 @@ const {
     DartFile,
     DartClass,
     DartClassProperty,
+    Imports,
 } = require('../types');
 
 const {
@@ -31,7 +32,7 @@ class JsonReader {
     constructor(isFlutter, projectName, source, className) {
         this.className = capitalize(className);
         /** @type {DartClass[]} */
-        this.clazzes = [];
+        this.theClasses = [];
         /** @type {DartFile[]} */
         this.files = [];
 
@@ -74,7 +75,7 @@ class JsonReader {
     /**
      * Create DartClasses from a JSON mapping with class content and properties.
      * This is intended only for creating new files not overriding exisiting ones.
-     * 
+     *
      * @param {any} object
      * @param {string} key
      */
@@ -90,8 +91,8 @@ class JsonReader {
             aClazz.name += 's';
         } else {
             // Top level arrays are currently not supported!
-            this.clazzes.push(aClazz);
-            console.log(`got ${this.clazzes.length} classes from JSON`)
+            this.theClasses.push(aClazz);
+            // console.log(`got ${this.theClasses.length} classes from JSON`)
         }
 
         let i = 1;
@@ -141,7 +142,7 @@ class JsonReader {
         let p = new DartClassProperty(propertyType, 'x');
         let i = 0;
         if (!p.isPrimitive) {
-            for (let aClass of this.clazzes) {
+            for (let aClass of this.theClasses) {
                 if (aClass.name == p.rawType) {
                     i++;
                 }
@@ -156,10 +157,10 @@ class JsonReader {
             this.generateClass(json, this.className);
             this.removeDuplicates();
 
-            for (let clazz of this.clazzes) {
+            for (let clazz of this.theClasses) {
                 this.files.push(new DartFile(clazz));
             }
-            console.log(`got ${this.files.length} files generated`)
+            // console.log(`got ${this.files.length} files generated`)
             return false;
         } catch (e) {
             console.log(e.msg);
@@ -171,7 +172,7 @@ class JsonReader {
     // , based on class name and properties (this should also be prevented during parsing)
     removeDuplicates() {
         let dedupClasses = [];
-        this.clazzes.forEach(aClass => {
+        this.theClasses.forEach(aClass => {
             let duplicated = false;
             // name and properties check
             for (const c of dedupClasses.filter(dedupClass => dedupClass.name === aClass.name )) {
@@ -189,26 +190,31 @@ class JsonReader {
             }
             if (!duplicated) dedupClasses.push(aClass);
         });
-        this.clazzes = dedupClasses;
+        this.theClasses = dedupClasses;
     }
 
     /**
-     * @param {DataClassGenerator} generator
+     *
+     * @param {DartClass} clazz
+     * @param {Imports} importList
      */
-    addGeneratedFilesAsImport(generator) {
-        const clazz = generator.clazzes[0];
-        for (let prop of clazz.properties) {
-            // Import only unambiguous generated types.
-            // E.g. if there are multiple generated classes with
-            // the same name, do not include an import for that class.
-            if (this.getGeneratedTypeCount(prop.listType.rawType) == 1) {
-                const imp = `import '${createFileName(prop.listType.rawType)}.dart';`;
-                generator.imports.push(imp);
-            }
-        }
-    }
+    addGeneratedFilesAsImport(clazz, importList) {
+      for (let prop of clazz.properties) {
+          // Import only unambiguous generated types.
+          // E.g. if there are multiple generated classes with
+          // the same name, do not include an import for that class.
+          if (this.getGeneratedTypeCount(prop.listType.rawType) == 1) {
+              const imp = `import '${createFileName(prop.listType.rawType)}.dart';`;
+              importList.push(imp);
+          }
+      }
+  }
 
     /**
+     * FIXME: this code stores `imports` in the generator and uses it to include class imports as well
+     * this bundles "template imports" with class specific imports, which is untidy (because the generator doesn't generate this way)
+     * Maybe it's ok, but it feels wrong (imports are generate for a class, but handled outside it)
+     *
      * @param {vscode.Progress} progress
      * @param {boolean} separate
      */
@@ -221,7 +227,7 @@ class JsonReader {
             const generator = new DataClassGenerator([file.clazz], null /* imports */, true, this.isFlutter, this.projectName);
 
             if (separate)
-                this.addGeneratedFilesAsImport(generator)
+                this.addGeneratedFilesAsImport(file.clazz, generator.imports)
 
             const imports = `${generator.imports.formatted}\n`;
 
@@ -229,9 +235,10 @@ class JsonReader {
                 increment: 100*i/(length - 1),
                 message: `Creating file ${file.name}...`
             });
-            console.warn(`Creating file ${file.name}`)
+            // console.warn(`Creating file ${file.name}`)
             if (separate) {
-                const replacement = imports + generator.clazzes[0].generateClassReplacement();
+                const[classCode, generatedImports] = generator.clazzes[0].generateClassContent()
+                const replacement = imports + classCode;
                 if (i == 0) {
                     await getEditor().edit(editor => editorReplace(editor, 0, null, replacement));
                 } else {
@@ -243,11 +250,73 @@ class JsonReader {
             } else {
                 // Insert in current file when JSON should not be separated.
                 for (let aClass of generator.clazzes) {
-                    fileContent += aClass.generateClassReplacement() + '\n\n';
+                    const[classCode, generatedImports] = aClass.generateClassContent()
+                    fileContent += classCode + '\n\n';
                 }
 
                 if (isLast) {
                     fileContent = removeEnd(fileContent, '\n\n');
+                    await getEditor().edit(editor => {
+                        editorReplace(editor, 0, null, fileContent);
+                        editorInsert(editor, 0, imports);
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * This is essentially the commitJson (not the best method name or class, but that's legacy)
+     * We are also setting/using the filename for the classes during rendering, as it is required for parts (and potentially other uses)
+     *
+     * @param {vscode.Progress} progress
+     * @param {boolean} separate
+     */
+    async renderWithTemplate(progress, separate, template, document) {
+        let fileContent = '';
+        const length = this.files.length;
+
+        let aggregatedImports = new Imports('', this.projectName);
+
+        for (let i = 0; i < length; i++) {
+            const file = this.files[i];
+            const isLast = i == length - 1;
+            // If using a template, the generator is not required, because the generator creates hardcoded classes, and doesn't parse anymore
+            // const generator = new DataClassGenerator([file.clazz], null /* imports */, true, this.isFlutter, this.projectName);
+
+            progress.report({
+                increment: 100*i/(length - 1),
+                message: `Creating file equivalent ${file.name}...`
+            });
+
+            if (separate) {
+                let importList = new Imports('', this.projectName);
+                this.addGeneratedFilesAsImport(file.clazz, importList)
+                let filename = `${file.name}.dart`
+                if (i == 0) {
+                  filename = document.fileName
+                }
+                const[classCode, generatedImports] = file.clazz.generateClassContent(template, filename)
+                generatedImports.values.forEach(packageToImport => importList.requiresImport(packageToImport) );
+                const imports = `${importList.formatted}`
+                const replacement = imports + classCode;
+                if (i == 0) {
+                    await getEditor().edit(editor => editorReplace(editor, 0, null, replacement));
+                } else {
+                    await writeFile(replacement, file.name, false);
+                }
+
+                // Slow the writing process intentionally down.
+                await new Promise(resolve => setTimeout(() => resolve(), 120));
+            } else {
+                // Insert in current file when JSON should not be separated.
+                const[classCode, generatedImports] = file.clazz.generateClassContent(template, document.fileName)
+                fileContent += classCode + '\n\n';
+                generatedImports.values.forEach(packageToImport => aggregatedImports.requiresImport(packageToImport) );
+
+                if (isLast) {
+                  const imports = `${aggregatedImports.formatted}`
+                  fileContent = removeEnd(fileContent, '\n\n');
                     await getEditor().edit(editor => {
                         editorReplace(editor, 0, null, fileContent);
                         editorInsert(editor, 0, imports);

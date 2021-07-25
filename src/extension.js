@@ -1,3 +1,6 @@
+const nls = require('vscode-nls');
+let localize = nls.config({ locale: 'en-GB'})();
+
 const vscode = require('vscode');
 
 const {
@@ -12,10 +15,6 @@ const {
     generateDataClassFromJson,
     generateDataClassFromJsonWithTemplate,
 } = require('./commands/commands');
-
-const nls = require('vscode-nls');
-
-let localize = nls.config({ locale: 'en-GB'})();
 
 /**
  * @param {vscode.ExtensionContext} context

@@ -1,5 +1,5 @@
 {
-  "extension.command.generateDataClass": "Generate from class properties",
-  "extension.command.generateDataClassFromJson": "Generate from JSON",
-  "extension.command.generateDataClassFromJsonWithTemplate": "Generate from JSON (templated)"
+  "command.generateDataClass": "Generate from class properties",
+  "command.generateDataClassFromJson": "Generate from JSON",
+  "command.generateDataClassFromJsonWithTemplate": "Generate from JSON (templated)"
 }

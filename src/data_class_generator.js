@@ -496,7 +496,7 @@ class DataClassGenerator {
 
         let collectionEqualityFn;
         if (hasCollection) {
-            // Flutter already has collection equality functions 
+            // Flutter already has collection equality functions
             // in the foundation package.
             if (this.isFlutter) {
                 this.requiresImport('package:flutter/foundation.dart');
@@ -682,7 +682,8 @@ class DataClassGenerator {
     append(method, clazz, partName = null, groupName = null) {
         let met = indent(method);
         const part = new ClassPart(partName, groupName);
-        part.replacement = '\n  //Added from append\n' + met;
+        // part.replacement = '\n  //Added from append\n' + met;
+        part.replacement = met;
         clazz.toInsert.push(part);
     }
 
@@ -691,7 +692,8 @@ class DataClassGenerator {
      * @param {DartClass} clazz
      */
     replace(part, clazz) {
-        part.replacement = '  //Added from replace\n' + part.replacement;
+        // part.replacement = '  //Added from replace\n' + part.replacement;
+        part.replacement = part.replacement;
         clazz.toReplace.push(part);
     }
 }

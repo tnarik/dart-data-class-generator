@@ -239,7 +239,7 @@ function removeEnd(source, end) {
     if (fs.existsSync(p)) {
         let i = 0;
         do {
-            p = destinationPath + name + '_' + ++i + '.dart'
+            p = path.join(destinationPath, `${name}_${++i}.dart`)
         } while (fs.existsSync(p));
     }
 
@@ -254,7 +254,7 @@ function removeEnd(source, end) {
 
 
 function getCurrentPath() {
-    let currentPath = vscode.window.activeTextEditor.document.fileName;
+    let currentPath = getDoc().fileName;
     return path.dirname(currentPath);
 }
 

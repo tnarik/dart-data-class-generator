@@ -1,5 +1,10 @@
+const nls = require('vscode-nls');
+let localize = nls.loadMessageBundle();
+
 const vscode = require('vscode');
 const path = require('path');
+
+const changeCase = require('change-case');
 
 const {
     toVarName,
@@ -12,7 +17,7 @@ const {
 
 /**
  * This class describes the class and filename binding
- * 
+ *
  */
 class DartFile {
     /**
@@ -236,34 +241,102 @@ class DartClass {
             classDeclaration += ` with ${this.mixins.join(', ')}`
         }
         if (this.interfaces.length > 0) {
-            classDeclaration += ` implements ${this.interfaces.join(', ')}` 
+            classDeclaration += ` implements ${this.interfaces.join(', ')}`
         }
 
         classDeclaration += ' {';
         return classDeclaration;
     }
 
-    // FIXME: This generates the FULL class text replacement - It is only required for JSON processing 
+
+    // Wraps the variable in ${}
+    getReplaceRegexp(variableName) {
+        // ${   variableName   --some separator for formatting--    formatter }
+        return new RegExp(String.raw`(?:\${)\s*${variableName}\s*(?:\:\s*(.*))?(?:})`, 'g');
+    }
+
+    replaceTemplatedContent(templatedText, replaceValues=[[]]) {
+        let codeAsString = templatedText.join('\n');
+        return replaceValues.reduce( (acc, replaceValue) => {
+            const [search, replace] = replaceValue;
+            // console.log(`search with '${search}' to replace as '${replace}'`)
+
+            var _ = acc.replace(
+                this.getReplaceRegexp(search),
+                (_, capturedTransformation) => {
+                    // console.log(`the regex captured ${capturedTransformation}`)
+                    if (capturedTransformation === '/camelcase') return changeCase.camelCase(replace);
+                    return replace
+                }
+            );
+            // console.log(_)
+            return _;
+        }, codeAsString);
+    }
+
+    // Used for JSON -> class
     // (or other data class representation not relying on previous Dart code) which should currently use getFullReplaceEdit
-    generateClassReplacement() {
-        // class declaration
-        let replacement = this.getClassDeclaration() + '\n';
+    // FIXME: this code is returning the imports associated to a class only for the templated case (for the non-templated is done via generator)
+    /**
+     *
+     * @param {Object} template
+     * @param {string} filename Is used if there is a template
+     * @returns [String, Imports]
+     */
+    generateClassContent(template=null, filename=null) {
+        // console.log(`CamelCase ${changeCase.camelCase(localize('testKey1', 'vive la vie'))}`)
+        if (template == null) {
+            // class declaration
+            let classContent = this.getClassDeclaration() + '\n';
 
-        // properties
-        for (let property of this.properties) {
-            replacement += `  final ${property.type} ${toVarName(property.name)};\n`;
-        }
-
-        // methods (all to be inserted), only if class is valid (has properties)
-        // Part generation already takes into account validity, but it might be that properties were manipulated
-        if (this.isValid) {
-            for (const part of this.toInsert) {
-                replacement += part.replacement;
+            // properties
+            for (let property of this.properties) {
+              classContent += `  final ${property.type} ${toVarName(property.name)};\n`;
             }
-        }
-        replacement += '}';
 
-        return removeEnd(replacement, '\n');
+            // methods (all to be inserted), only if class is valid (has properties)
+            // Part generation already takes into account validity, but it might be that properties were manipulated
+            if (this.isValid) {
+                for (const part of this.toInsert) {
+                  classContent += part.replacement;
+                }
+            }
+            classContent += '}';
+
+            return [removeEnd(classContent, '\n'), new Imports('', '')];
+        } else {
+            // add external imports required for template
+            let importList = new Imports('', '');
+
+            let replaceValues = []
+
+            // replacement value: className
+            let className = `${this.name}${this.fullGenericType}`;
+            replaceValues.push(['className', className]);
+            // replacement value: fileName (destination)
+            replaceValues.push(['fileName', path.basename(filename).split('.').slice(0,-1).join()]);
+
+            // replacement value: fieldsContent
+            let fieldsContent = ''
+            for (let classField of this.properties) {
+                let fieldType = classField.type
+                if (template.template.typeMapping[classField.type]) {
+                    fieldType = template.template.typeMapping[classField.type].type;
+                    if (template.template.typeMapping[classField.type].imports) {
+                      // add external imports required import for type
+                      template.template.typeMapping[classField.type].imports.forEach(packageToImport => importList.requiresImport(packageToImport) );
+                  };
+                }
+                fieldsContent += `  ${fieldType} get ${toVarName(classField.name)};\n`;
+            }
+            replaceValues.push(['fieldsContent', removeEnd(fieldsContent, '\n')]);
+
+            // process imports/parts/etc.
+            template.template.imports.forEach(packageToImport => importList.requiresImport(this.replaceTemplatedContent([packageToImport], replaceValues)) );
+            // Apply replacement values to template
+            let classContent = '\n//A test with template driven code \n'+this.replaceTemplatedContent(template.template.code, replaceValues);
+            return [classContent, importList];
+        }
     }
 }
 
@@ -330,7 +403,7 @@ class DartClass {
             const line = lines[i].trim();
             const isLast = i == lines.length - 1;
 
-            if (line.startsWith('import') || line.startsWith('export') || line.startsWith('part')) {
+            if (line.startsWith('import ') || line.startsWith('export ') || line.startsWith('part ')) {
                 this.values.push(line);
                 this.rawStatements += `${line}\n`;
                 if (this.startsAt == null) {
@@ -343,8 +416,8 @@ class DartClass {
                 }
             } else {
                 const isInitialComment = line.startsWith('//') && this.values.length == 0;
-                const importsSectionEnded = !(isInitialComment || line.startsWith('library') || isBlank(line));
-                
+                const importsSectionEnded = !(isInitialComment || line.startsWith('library ') || isBlank(line));
+
                 if (isLast || importsSectionEnded) {
                     if (this.startsAt != null) {
                         if (i > 0 && isBlank(lines[i - 1])) {
@@ -381,9 +454,9 @@ class DartClass {
         const exports = [];
 
         for (let statement of this.values) {
-            if (statement.startsWith('export')) {
+            if (statement.startsWith('export ')) {
                 exports.push(statement);
-            } else if (statement.startsWith('part')) {
+            } else if (statement.startsWith('part ')) {
                 partStatements.push(statement);
             } else if (statement.includes('dart:')) {
                 dartImports.push(statement);
@@ -451,7 +524,11 @@ class DartClass {
      * @param {string[]} validOverrides
      */
     requiresImport(importStatementOrPackageName, validOverrides = []) {
-        const formattedImport = !importStatementOrPackageName.startsWith('import') ? "import '" + importStatementOrPackageName + "';" : importStatementOrPackageName;
+        const formattedImport = (
+          !importStatementOrPackageName.startsWith('import ') &&
+          !importStatementOrPackageName.startsWith('export ') &&
+          !importStatementOrPackageName.startsWith('part ')
+        )? "import '" + importStatementOrPackageName + "';" : importStatementOrPackageName;
 
         if (!this.includes(formattedImport) && !this.hasAtLeastOneImport(validOverrides)) {
             this.values.push(formattedImport);

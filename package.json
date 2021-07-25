@@ -45,17 +45,17 @@
     "contributes": {
         "commands": [
             {
-                "title": "%extension.command.generateDataClass%",
+                "title": "%command.generateDataClass%",
                 "command": "dart-data-o-matic.generate.from_props",
                 "category": "Dart Data-O-matic (DarDO)"
             },
             {
-                "title": "%extension.command.generateDataClassFromJson%",
+                "title": "%command.generateDataClassFromJson%",
                 "command": "dart-data-o-matic.generate.from_json",
                 "category": "Dart Data-O-matic (DarDO)"
             },
             {
-                "title": "%extension.command.generateDataClassFromJsonWithTemplate%",
+                "title": "%command.generateDataClassFromJsonWithTemplate%",
                 "command": "dart-data-o-matic.generate.from_json_with_template",
                 "category": "Dart Data-O-matic (DarDO)"
             }
@@ -227,8 +227,15 @@
                             "template": {
                                 "imports": [
                                     "package:built_value/serializer.dart",
-                                    "package:built_value/built_value.dart"
+                                    "package:built_value/built_value.dart",
+                                    "part '${fileName}.g.dart';"
                                 ],
+                              "typeMapping": {
+                                  "List<dynamic>" : {
+                                    "type": "BuiltList<dynamic>",
+                                    "imports": ["package:built_collection/built_collection.dart"]
+                                  }
+                                },
                                 "code": [
                                     "abstract class ${className} implements Built<${className}, ${className}Builder>{",
                                     "${fieldsContent}",
@@ -240,22 +247,8 @@
                                     "}"
                                 ]
                             }
-                        },
-                        {
-                            "name": "template1",
-                            "template": {
-                                "imports": [
-                                    "package:built_value/serializer.dart",
-                                    "package:built_value/built_value.dart"
-                                ],
-                                "code": [
-                                    "one",
-                                    "two",
-                                    "third line"
-                                ]
-                            }
                         }
-                    ],
+                      ],
                     "items": {
                         "type": "object",
                         "additionalProperties": false,
