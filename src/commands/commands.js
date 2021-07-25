@@ -6,7 +6,7 @@ const { JsonReader } = require('../readers/json_reader');
 const { DataClassGenerator } = require('../data_class_generator');
 
 const {
-  DartClass,
+  DartClass, // eslint-disable-line no-unused-vars
 } = require('../types');
 
 const {

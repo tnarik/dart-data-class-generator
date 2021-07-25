@@ -293,7 +293,7 @@
     "@types/node": "^10.12.21",
     "@types/vscode": "^1.37.0",
     "esbuild": "^0.12.15",
-    "eslint": "^5.13.0",
+    "eslint": "^7.31.0",
     "glob": "^7.1.4",
     "mocha": "^6.1.4",
     "typescript": "^3.3.1",

@@ -6,8 +6,8 @@ const { DartClassReader } = require('../readers/dart_class_reader');
 const { DataClassGenerator } = require('../data_class_generator');
 
 const {
-  DartClass,
-  Imports,
+  DartClass, // eslint-disable-line no-unused-vars
+  Imports, // eslint-disable-line no-unused-vars
 } = require('../types');
 
 const {

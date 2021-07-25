@@ -1,5 +1,5 @@
-const nls = require('vscode-nls');
-let localize = nls.config({ locale: 'en-GB' })();
+// const nls = require('vscode-nls');
+// let localize = nls.config({ locale: 'en-GB' })();
 
 const vscode = require('vscode');
 
@@ -50,10 +50,10 @@ async function activate(context) {
   );
   context.subscriptions.push(vscode.languages.registerCodeActionsProvider({
     language: 'dart',
-    scheme: 'file'
+    scheme: 'file',
   }, new DataClassCodeActions(isFlutter, projectName), {
     providedCodeActionKinds: [
-      vscode.CodeActionKind.QuickFix
+      vscode.CodeActionKind.QuickFix,
     ],
   }));
 }

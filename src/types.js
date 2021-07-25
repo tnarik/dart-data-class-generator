@@ -1,5 +1,5 @@
-const nls = require('vscode-nls');
-let localize = nls.loadMessageBundle();
+// const nls = require('vscode-nls');
+// let localize = nls.loadMessageBundle();
 
 const vscode = require('vscode');
 const path = require('path');
@@ -314,7 +314,10 @@ class DartClass {
       let className = `${this.name}${this.fullGenericType}`;
       replaceValues.push(['className', className]);
       // replacement value: fileName (destination)
-      replaceValues.push(['fileName', path.basename(filename).split('.').slice(0, -1).join()]);
+      replaceValues.push(['fileName', path.basename(filename)
+        .split('.')
+        .slice(0, -1)
+        .join()]);
 
       // replacement value: fieldsContent
       let fieldsContent = ''
@@ -389,7 +392,7 @@ class Imports {
   get range() {
     return new vscode.Range(
       new vscode.Position(this.startsAt - 1, 0),
-      new vscode.Position(this.endsAt, 1),
+      new vscode.Position(this.endsAt, 1)
     );
   }
 
@@ -628,17 +631,15 @@ class ClassPart {
    * @param {string} groupName
    * @param {number} startsAt
    * @param {number} endsAt
-   * @param {string} current Used to determine if the part is valid (has content) and compare on generator
-   * @param {string} replacement
    */
-  constructor(name, groupName = null, startsAt = null, endsAt = null, current = null, replacement = null) {
+  constructor(name, groupName = null, startsAt = null, endsAt = null) {
     // console.log(`creating part ${name} / ${groupName}`)
     this.name = name;
     this.groupName = groupName;
     this.startsAt = startsAt;
     this.endsAt = endsAt;
     this.current = '';
-    this.replacement = replacement;
+    this.replacement = '';
   }
 
   get isValid() {

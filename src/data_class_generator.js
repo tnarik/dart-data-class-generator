@@ -1,7 +1,7 @@
 const {
-  DartClass,
+  DartClass, // eslint-disable-line no-unused-vars
   Imports,
-  DartClassProperty,
+  DartClassProperty, // eslint-disable-line no-unused-vars
   ClassPart,
 } = require('./types');
 
@@ -12,15 +12,6 @@ const {
   areStrictEqual,
   readSetting,
 } = require('./helpers');
-
-/**
-* @param {string} source
-* @param {string} match
-*/
-function count(source, match) {
-  return source.split(match).length - 1;
-}
-
 
 /**
  * @param {string} source
@@ -377,7 +368,7 @@ class DataClassGenerator {
   insertFromMap(clazz) {
     let withDefaultValues = readSetting('fromMap.default_values');
     let props = clazz.properties;
-    const fromJSON = this.fromJSON;
+    const generatingFromJson = this.fromJSON;
 
     /**
      * @param {DartClassProperty} prop
@@ -396,7 +387,13 @@ class DataClassGenerator {
         case 'IconData':
           return `IconData(${value}, fontFamily: 'MaterialIcons')${endFlag}`
         default:
-          return `${!prop.isPrimitive ? prop.type + '.fromMap(' : ''}${value}${!prop.isPrimitive ? ')' : ''}${fromJSON ? (prop.isDouble ? '?.toDouble()' : prop.isInt ? '?.toInt()' : '') : ''}${addDefault && !prop.isNullable ? ` ?? ${prop.defValue}` : ''}${endFlag}`;
+          // Class.fromMap(value) or value
+          let mappableProperty = `${!prop.isPrimitive ? prop.type + '.fromMap(' : ''}${value}${!prop.isPrimitive ? ')' : ''}`
+          // value?.toDouble() or value?.toInt()
+          let propSuffix = prop.isDouble ? '?.toDouble()' : prop.isInt ? '?.toInt()' : ''
+          let jsonManipulation = generatingFromJson ? propSuffix : ''
+
+          return `${mappableProperty}${jsonManipulation}${addDefault && !prop.isNullable ? ` ?? ${prop.defValue}` : ''}${endFlag}`;
       }
     }
 
@@ -550,7 +547,7 @@ class DataClassGenerator {
       this.requiresImport('dart:ui', [
         'package:flutter/material.dart',
         'package:flutter/cupertino.dart',
-        'package:flutter/widgets.dart'
+        'package:flutter/widgets.dart',
       ]);
 
       method += `hashList([\n`;

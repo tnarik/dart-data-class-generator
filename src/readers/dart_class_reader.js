@@ -146,7 +146,7 @@ class DartClassReader {
               if (word.includes('<')) {
                 aClass.fullGenericType = word.substring(
                   word.indexOf('<'),
-                  word.lastIndexOf('>') + 1,
+                  word.lastIndexOf('>') + 1
                 );
 
                 word = word.substring(0, word.indexOf('<'));

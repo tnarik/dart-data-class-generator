@@ -1,23 +1,45 @@
 {
-	"env": {
-		"browser": false,
-		"commonjs": true,
-		"es6": true,
-		"node": true
-	},
-	"parserOptions": {
-		"ecmaFeatures": {
-			"jsx": true
-		},
-		"sourceType": "module"
-	},
-	"rules": {
-		"no-const-assign": "warn",
-		"no-this-before-super": "warn",
-		"no-undef": "warn",
-		"no-unreachable": "warn",
-		"no-unused-vars": "warn",
-		"constructor-super": "warn",
-		"valid-typeof": "warn"
-	}
+  "env": {
+    "browser": true,
+    "node": true,
+    "commonjs": true,
+    "es2020": true
+  },
+  "parserOptions": {
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-const-assign": "error",
+    "no-this-before-super": "error",
+    "no-undef": "error",
+    "no-unreachable": "error",
+    "no-unused-vars": [ "error", { "varsIgnorePattern": "^_" } ],
+    "constructor-super": "error",
+    "valid-typeof": "error",
+    "camelcase": "error",
+    "indent": [ "error", 2,
+      {
+        "SwitchCase": 1,
+        "MemberExpression": 1,
+        "ignoreComments": true
+      }
+    ],
+    "max-len": [ "warn", { "code": 190 } ],
+    "comma-dangle": [ "error",
+      {
+        "arrays": "always-multiline",
+        "objects": "always-multiline",
+        "imports": "always-multiline",
+        "exports": "always-multiline",
+        "functions": "never"
+      }
+    ],
+    "space-before-function-paren": [
+      "error",
+      "never"
+    ],
+    "newline-per-chained-call": [ "error", { "ignoreChainWithDepth": 3 } ],
+    "spaced-comment": "off",
+    "semi": "off"
+  }
 }

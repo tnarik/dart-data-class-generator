@@ -176,7 +176,7 @@ function toVarName(source) {
     "var",
     "void",
     "while",
-    "with"
+    "with",
   ];
 
   let s = source;

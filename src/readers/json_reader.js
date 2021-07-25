@@ -1,4 +1,4 @@
-const vscode = require('vscode');
+const vscode = require('vscode'); // eslint-disable-line no-unused-vars
 
 const { DataClassGenerator } = require('../data_class_generator');
 
@@ -233,11 +233,11 @@ class JsonReader {
 
       progress.report({
         increment: 100 * i / (length - 1),
-        message: `Creating file ${file.name}...`
+        message: `Creating file ${file.name}...`,
       });
       // console.warn(`Creating file ${file.name}`)
       if (separate) {
-        const [classCode, generatedImports] = generator.clazzes[0].generateClassContent()
+        const [classCode, _] = generator.clazzes[0].generateClassContent()
         const replacement = imports + classCode;
         if (i == 0) {
           await getEditor().edit(editor => editorReplace(editor, 0, null, replacement));
@@ -250,7 +250,7 @@ class JsonReader {
       } else {
         // Insert in current file when JSON should not be separated.
         for (let aClass of generator.clazzes) {
-          const [classCode, generatedImports] = aClass.generateClassContent()
+          const [classCode, _] = aClass.generateClassContent()
           fileContent += classCode + '\n\n';
         }
 
@@ -286,7 +286,7 @@ class JsonReader {
 
       progress.report({
         increment: 100 * i / (length - 1),
-        message: `Creating file equivalent ${file.name}...`
+        message: `Creating file equivalent ${file.name}...`,
       });
 
       if (separate) {
