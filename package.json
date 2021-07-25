@@ -1,305 +1,307 @@
 {
-    "name": "dart-data-o-matic",
-    "displayName": "Dart Data-O-matic (DarDO)",
-    "description": "Create Dart data classes easily from simple classes with properties or JSON payloads",
-    "publisher": "lecafeautomatique",
-    "version": "0.6.0",
-    "engines": {
-        "vscode": "^1.37.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/tnarik/dart-data-class-generator"
-    },
-    "bugs": {
-        "url": "https://github.com/tnarik/dart-data-class-generator/issues",
-        "email": "tnarik@lecafeautomatique.co.uk"
-    },
-    "icon": "assets/icon.png",
-    "keywords": [
-        "dart data class generator",
-        "dart data class",
-        "dart data",
-        "dart",
-        "data class generator",
-        "class generator",
-        "json to dart",
-        "dart templates",
-        "templates"
+  "name": "dart-data-o-matic",
+  "displayName": "Dart Data-O-matic (DarDO)",
+  "description": "Create Dart data classes easily from simple classes with properties or JSON payloads",
+  "publisher": "lecafeautomatique",
+  "version": "0.6.0",
+  "engines": {
+    "vscode": "^1.37.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tnarik/dart-data-class-generator"
+  },
+  "bugs": {
+    "url": "https://github.com/tnarik/dart-data-class-generator/issues",
+    "email": "tnarik@lecafeautomatique.co.uk"
+  },
+  "icon": "assets/icon.png",
+  "keywords": [
+    "dart data class generator",
+    "dart data class",
+    "dart data",
+    "dart",
+    "data class generator",
+    "class generator",
+    "json to dart",
+    "dart templates",
+    "templates"
+  ],
+  "author": {
+    "name": "Tnarik Innael"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:dart",
+    "workspaceContains:pubspec.yaml",
+    "onCommand:dart-data-o-matic.generate.from_props",
+    "onCommand:dart-data-o-matic.generate.from_json",
+    "onCommand:dart-data-o-matic.generate.from_json_with_template"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "title": "%command.generateDataClass%",
+        "command": "dart-data-o-matic.generate.from_props",
+        "category": "Dart Data-O-matic (DarDO)"
+      },
+      {
+        "title": "%command.generateDataClassFromJson%",
+        "command": "dart-data-o-matic.generate.from_json",
+        "category": "Dart Data-O-matic (DarDO)"
+      },
+      {
+        "title": "%command.generateDataClassFromJsonWithTemplate%",
+        "command": "dart-data-o-matic.generate.from_json_with_template",
+        "category": "Dart Data-O-matic (DarDO)"
+      }
     ],
-    "author": {
-        "name": "Tnarik Innael"
-    },
-    "categories": [
-        "Programming Languages",
-        "Other"
-    ],
-    "activationEvents": [
-        "onLanguage:dart",
-        "workspaceContains:pubspec.yaml",
-        "onCommand:dart-data-o-matic.generate.from_props",
-        "onCommand:dart-data-o-matic.generate.from_json",
-        "onCommand:dart-data-o-matic.generate.from_json_with_template"
-    ],
-    "main": "./dist/extension.js",
-    "contributes": {
-        "commands": [
+    "configuration": {
+      "title": "Dart Data-O-matic",
+      "properties": {
+        "dart-data-o-matic.quick_fixes": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, enables quick fixes to quickly generate data classes or specific methods only."
+        },
+        "dart-data-o-matic.fromMap.default_values": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": false,
+          "description": "If true, checks if a field is null when deserializing and provides a non-null default value."
+        },
+        "dart-data-o-matic.constructor.default_values": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": false,
+          "description": "If true, generates default values for the constructor."
+        },
+        "dart-data-o-matic.constructor.required": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": false,
+          "description": "If true, generates the @required annotiation to every constructor parameter. Note: The generator wont generate default values for the constructor if enabled!"
+        },
+        "dart-data-o-matic.override.manual": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": false,
+          "description": "If true, asks, when overriding a class (running the command on an existing class), for every single function/constructor that needs to be changed whether the generator should override the function or not. This allows you to preserve custom changes you made to the function/constructor that would be otherwise overwritten by the generator."
+        },
+        "dart-data-o-matic.json.separate": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "separate",
+            "current_file"
+          ],
+          "default": "ask",
+          "description": "Whether to separate a JSON into multiple files, when the JSON contains nested objects. ask: choose manually every time, separate: always separate into multiple files, current_file: always insert all classes into the current file."
+        },
+        "dart-data-o-matic.constructor.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates a constructor for a data class."
+        },
+        "dart-data-o-matic.copyWith.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates a copyWith function for a data class."
+        },
+        "dart-data-o-matic.toMap.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates a toMap function for a data class."
+        },
+        "dart-data-o-matic.fromMap.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates a fromMap function for a data class."
+        },
+        "dart-data-o-matic.toJson.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates a toJson function for a data class."
+        },
+        "dart-data-o-matic.fromJson.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates a fromJson function for a data class."
+        },
+        "dart-data-o-matic.toString.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates a toString function for a data class."
+        },
+        "dart-data-o-matic.equality.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates an override of the == (equals) operator for a data class."
+        },
+        "dart-data-o-matic.hashCode.enabled": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": true,
+          "description": "If true, generates a hashCode function for a data class."
+        },
+        "dart-data-o-matic.hashCode.use_jenkins": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": false,
+          "description": "If true, uses the Jenkins SMI hash function instead of bitwise operator from dart:ui."
+        },
+        "dart-data-o-matic.useEquatable": {
+          "type": "boolean",
+          "enum": [
+            true,
+            false
+          ],
+          "default": false,
+          "description": "If true, uses equatable for value equality and hashcode."
+        },
+        "dart-data-o-matic.templates": {
+          "type": "array",
+          "scope": "window",
+          "description": "A list of templates available for class generation from JSON payloads",
+          "default": [
             {
-                "title": "%command.generateDataClass%",
-                "command": "dart-data-o-matic.generate.from_props",
-                "category": "Dart Data-O-matic (DarDO)"
-            },
-            {
-                "title": "%command.generateDataClassFromJson%",
-                "command": "dart-data-o-matic.generate.from_json",
-                "category": "Dart Data-O-matic (DarDO)"
-            },
-            {
-                "title": "%command.generateDataClassFromJsonWithTemplate%",
-                "command": "dart-data-o-matic.generate.from_json_with_template",
-                "category": "Dart Data-O-matic (DarDO)"
+              "name": "build_value with serializer",
+              "template": {
+                "imports": [
+                  "package:built_value/serializer.dart",
+                  "package:built_value/built_value.dart",
+                  "part '${fileName}.g.dart';"
+                ],
+                "typeMapping": {
+                  "List<dynamic>": {
+                    "type": "BuiltList<dynamic>",
+                    "imports": [
+                      "package:built_collection/built_collection.dart"
+                    ]
+                  }
+                },
+                "code": [
+                  "abstract class ${className} implements Built<${className}, ${className}Builder>{",
+                  "${fieldsContent}",
+                  "",
+                  "  ${className}._();",
+                  "",
+                  "  static Serializer<${className}> get serializer => _$${className:/camelcase}Serializer;",
+                  "  factory ${className}([void Function(${className}Builder) updates]) = _$${className};",
+                  "}"
+                ]
+              }
             }
-        ],
-        "configuration": {
-            "title": "Dart Data-O-matic",
+          ],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
             "properties": {
-                "dart-data-o-matic.quick_fixes": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, enables quick fixes to quickly generate data classes or specific methods only."
-                },
-                "dart-data-o-matic.fromMap.default_values": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": false,
-                    "description": "If true, checks if a field is null when deserializing and provides a non-null default value."
-                },
-                "dart-data-o-matic.constructor.default_values": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": false,
-                    "description": "If true, generates default values for the constructor."
-                },
-                "dart-data-o-matic.constructor.required": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": false,
-                    "description": "If true, generates the @required annotiation to every constructor parameter. Note: The generator wont generate default values for the constructor if enabled!"
-                },
-                "dart-data-o-matic.override.manual": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": false,
-                    "description": "If true, asks, when overriding a class (running the command on an existing class), for every single function/constructor that needs to be changed whether the generator should override the function or not. This allows you to preserve custom changes you made to the function/constructor that would be otherwise overwritten by the generator."
-                },
-                "dart-data-o-matic.json.separate": {
-                    "type": "string",
-                    "enum": [
-                        "ask",
-                        "separate",
-                        "current_file"
-                    ],
-                    "default": "ask",
-                    "description": "Whether to separate a JSON into multiple files, when the JSON contains nested objects. ask: choose manually every time, separate: always separate into multiple files, current_file: always insert all classes into the current file."
-                },
-                "dart-data-o-matic.constructor.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates a constructor for a data class."
-                },
-                "dart-data-o-matic.copyWith.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates a copyWith function for a data class."
-                },
-                "dart-data-o-matic.toMap.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates a toMap function for a data class."
-                },
-                "dart-data-o-matic.fromMap.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates a fromMap function for a data class."
-                },
-                "dart-data-o-matic.toJson.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates a toJson function for a data class."
-                },
-                "dart-data-o-matic.fromJson.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates a fromJson function for a data class."
-                },
-                "dart-data-o-matic.toString.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates a toString function for a data class."
-                },
-                "dart-data-o-matic.equality.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates an override of the == (equals) operator for a data class."
-                },
-                "dart-data-o-matic.hashCode.enabled": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": true,
-                    "description": "If true, generates a hashCode function for a data class."
-                },
-                "dart-data-o-matic.hashCode.use_jenkins": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": false,
-                    "description": "If true, uses the Jenkins SMI hash function instead of bitwise operator from dart:ui."
-                },
-                "dart-data-o-matic.useEquatable": {
-                    "type": "boolean",
-                    "enum": [
-                        true,
-                        false
-                    ],
-                    "default": false,
-                    "description": "If true, uses equatable for value equality and hashcode."
-                },
-                "dart-data-o-matic.templates": {
-                    "type": "array",
-                    "scope": "window",
-                    "description": "A list of templates available for class generation from JSON payloads",
-                    "default": [
-                        {
-                            "name": "build_value with serializer",
-                            "template": {
-                                "imports": [
-                                    "package:built_value/serializer.dart",
-                                    "package:built_value/built_value.dart",
-                                    "part '${fileName}.g.dart';"
-                                ],
-                              "typeMapping": {
-                                  "List<dynamic>" : {
-                                    "type": "BuiltList<dynamic>",
-                                    "imports": ["package:built_collection/built_collection.dart"]
-                                  }
-                                },
-                                "code": [
-                                    "abstract class ${className} implements Built<${className}, ${className}Builder>{",
-                                    "${fieldsContent}",
-                                    "",
-                                    "  ${className}._();",
-                                    "",
-                                    "  static Serializer<${className}> get serializer => _$${className:/camelcase}Serializer;",
-                                    "  factory ${className}([void Function(${className}Builder) updates]) = _$${className};",
-                                    "}"
-                                ]
-                            }
-                        }
-                      ],
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                            "name": {
-                                "type": "string",
-                                "default": "",
-                                "minLength": 1,
-                                "pattern": "^([^\\s].*[^\\s]*)$"
-                            },
-                            "template": {
-                                "type": "array",
-                                "description": "Templated content",
-                                "default": [],
-                                "items": {
-                                    "type": "string",
-                                    "default": "",
-                                    "minLength": 1,
-                                    "pattern": "^([^\\s].*[^\\s]*)$"
-                                }
-                            }
-                        }
-                    }
+              "name": {
+                "type": "string",
+                "default": "",
+                "minLength": 1,
+                "pattern": "^([^\\s].*[^\\s]*)$"
+              },
+              "template": {
+                "type": "array",
+                "description": "Templated content",
+                "default": [],
+                "items": {
+                  "type": "string",
+                  "default": "",
+                  "minLength": 1,
+                  "pattern": "^([^\\s].*[^\\s]*)$"
                 }
+              }
             }
+          }
         }
-    },
-    "scripts": {
-        "test": "node ./test/runTest.js",
-        "vscode:prepublish": "npm run -s build-icon && npm run -s esbuild-base -- --minify",
-        "package": "npx vsce package",
-        "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
-        "build": "npm run -s esbuild-base -- --sourcemap",
-        "watch": "npm run -s esbuild-base -- --sourcemap --watch",
-        "build-icon": "npx svgexport assets/src/icon.svg assets/icon.png 256:256 pad"
-    },
-    "devDependencies": {
-        "@types/glob": "^7.1.1",
-        "@types/mocha": "^5.2.6",
-        "@types/node": "^10.12.21",
-        "@types/vscode": "^1.37.0",
-        "esbuild": "^0.12.15",
-        "eslint": "^5.13.0",
-        "glob": "^7.1.4",
-        "mocha": "^6.1.4",
-        "typescript": "^3.3.1",
-        "vscode-nls-dev": "^3.3.2",
-        "vscode-test": "^1.0.2"
-    },
-    "dependencies": {
-        "change-case": "^4.1.2",
-        "vscode-nls": "^5.0.0"
+      }
     }
+  },
+  "scripts": {
+    "test": "node ./test/runTest.js",
+    "vscode:prepublish": "npm run -s build-icon && npm run -s esbuild-base -- --minify",
+    "package": "npx vsce package",
+    "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build": "npm run -s esbuild-base -- --sourcemap",
+    "watch": "npm run -s esbuild-base -- --sourcemap --watch",
+    "build-icon": "npx svgexport assets/src/icon.svg assets/icon.png 256:256 pad"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^10.12.21",
+    "@types/vscode": "^1.37.0",
+    "esbuild": "^0.12.15",
+    "eslint": "^5.13.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.1.4",
+    "typescript": "^3.3.1",
+    "vscode-nls-dev": "^3.3.2",
+    "vscode-test": "^1.0.2"
+  },
+  "dependencies": {
+    "change-case": "^4.1.2",
+    "vscode-nls": "^5.0.0"
+  }
 }
