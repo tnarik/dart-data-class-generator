@@ -1,5 +1,5 @@
-// const nls = require('vscode-nls');
-// let localize = nls.config({ locale: 'en-GB' })();
+const nls = require('vscode-nls');
+let localize = nls.config({ locale: 'en-GB' })();
 
 const vscode = require('vscode');
 
@@ -21,6 +21,9 @@ const {
  */
 async function activate(context) {
   const [isFlutter, projectName] = await characterizeProject();
+
+  var msg = localize('hello.hello', 'very first hello')
+  console.log(msg);
 
   context.subscriptions.push(
     vscode.commands.registerCommand(

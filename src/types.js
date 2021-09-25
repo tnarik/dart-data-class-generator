@@ -323,6 +323,19 @@ class DartClass {
       let fieldsContent = ''
       for (let classField of this.properties) {
         let fieldType = classField.type
+
+        // Check if there is a replacement via regex
+        for (const [typeString, mapping] of template.template.typeMapping.entries()) {
+          let matchResult = typeString.exec(classField.type)
+          if (matchResult) {
+            fieldType = classField.type.replace(typeString, mapping.type);
+            if (typeString.imports) {
+              // add external imports required import for type
+              typeString.imports.forEach(packageToImport => importList.requiresImport(packageToImport));
+            };
+          }
+        }
+        // allow specific override
         if (template.template.typeMapping[classField.type]) {
           fieldType = template.template.typeMapping[classField.type].type;
           if (template.template.typeMapping[classField.type].imports) {
@@ -330,6 +343,7 @@ class DartClass {
             template.template.typeMapping[classField.type].imports.forEach(packageToImport => importList.requiresImport(packageToImport));
           };
         }
+
         fieldsContent += `  ${fieldType} get ${toVarName(classField.name)};\n`;
       }
       replaceValues.push(['fieldsContent', removeEnd(fieldsContent, '\n')]);
